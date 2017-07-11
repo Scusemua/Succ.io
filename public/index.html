@@ -1,0 +1,165 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Succ.IO - The Game</title>
+
+	</head>
+	
+    <!-- Ensure that everything scales appropriately on a mobile device -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	
+	<link rel="stylesheet" type="text/css" href="css/styles.css" />
+	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
+	<body>	
+<!--[if lt IE 7]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+<![endif]-->
+		<div class="container" id="main-banner">
+			<p>Succ.io</p>
+		</div>  
+		
+			<!-- This is where templates will be used -->
+		<div id="gameArea">
+		
+		</div>		
+		
+		<div id="chatArea">
+		
+		</div>	
+
+		<script id="nickname-template" type="text/template">
+			<div class="info-prompt">
+				<div> 
+					<h4>Please enter a nickname.</h4>
+					<input id="inputPlayerName" type="text" class="form-control" placeholder="Enter name here." autocomplete="off"/> 	
+					<span class="input-group-btn">
+						<input id="btnConfirmNickname" class="semi-transparent-button" type="submit" value="Confirm"/>
+					</span>				
+				</div>
+			</div>		
+		</script>
+		
+		<script id="join-create-template" type="text/template">
+			<div class="info-prompt">
+				<div class>
+					<h3>Join Game or Create Game?</h3>
+					<input id="btnJoin" class="semi-transparent-button stacked-button" type="submit" value="Join" style="margin-top: 15px;"/>
+					<input id="btnCreate" class="semi-transparent-button stacked-button" type="submit" value="Create" style="margin-top: 15px;"/>
+				</div>
+			</div>
+		</script>
+		
+		<script id="join-game-template" type="text/template">
+			<div class="info-prompt">
+				<div class>
+					<h4>Please enter a numerical ID.</h4>
+					<input id="inputGameId" type="number" class="form-control" placeholder="Enter ID here." autocomplete="off"/>  
+					<span class="input-group-btn" >
+						<input id="btnConfirmGameId" class="semi-transparent-button" type="submit" value="Join Game"/>
+					</span>								
+				</div>
+			</div>
+		</script>	
+		
+		<script id="new-game-template-non-host" type="text/template">
+            <div id="gameCode">Error!</div>
+			<div>
+				<table class=".table-striped" width="100%" style="margin: 0px; padding: 0px;">
+					<tr>
+						<th colspan="1">Chat</th>
+						<th>Players Waiting</th>
+					</tr>
+					<tr>
+						<td style="width: 70%;">
+							<div>
+								<style>
+									#messages { list-style-type: none; margin: 0; padding: 0; }
+									#messages li { padding: 5px 10px; }
+									#messages li:nth-child(odd) { background: #eee; }
+									form { background: #FFB6B6; padding: 3px; bottom: 0; }
+									form input { border: 0; padding: 10px; width: 50%; margin-right: .5%; }
+									form button { width: 10%; background: #E14444; border: none; padding: 10px; min-width: 70px; }
+								</style>
+								<div id="chat-window">
+									<nav>
+										<ul id="messages"></ul>
+										<form id="message-box-form" onSubmit="return false;">
+											<input id="message-box" autocomplete="off"/> <button id="btn-send-message" type="button" class="btn btn-main">Send</button>
+										</form>
+									</nav>
+								</div>					
+							</div>						
+						</td>
+						<td style="width: 30%;">
+							<div id="players-waiting">
+								<ul id="players-waiting-list"></ul>
+							</div>						
+						</td>
+					</tr>
+				</table>
+			</div>
+		</script>
+		
+		<script id="new-game-template-host" type="text/template">
+            <div id="gameCode">Error!</div>
+			<div>
+				<table class=".table-striped" width="100%" style="margin: 0px; padding: 0px;">
+					<tr>
+						<th colspan="1">Chat</th>
+						<th>Players Waiting</th>
+					</tr>
+					<tr>
+						<td style="width: 70%;">
+							<div>
+								<style>
+									#messages { list-style-type: none; margin: 0; padding: 0; }
+									#messages li { padding: 5px 10px; }
+									#messages li:nth-child(odd) { background: #eee; }
+									form { background: #FFB6B6; padding: 3px; bottom: 0; }
+									form input { border: 0; padding: 10px; width: 50%; margin-right: .5%; }
+									form button { width: 10%; background: #E14444; border: none; padding: 10px; min-width: 70px; }
+								</style>
+								<div id="chat-window">
+									<nav>
+										<ul id="messages"></ul>
+										<form id="message-box-form" onSubmit="return false;">
+											<input id="message-box" autocomplete="off"/> <button id="btn-send-message" type="button" class="btn btn-main">Send</button>
+										</form>
+									</nav>
+								</div>					
+							</div>						
+						</td>
+						<td style="width: 30%;">
+							<div id="players-waiting">
+								<ul id="players-waiting-list"></ul>
+							</div>						
+						</td>
+					</tr>
+				</table>
+			</div>
+			<div>
+				<input id="btnHostStartGame" class="semi-transparent-button" type="submit" value="Start Game"/>
+			</div>
+		</script>		
+	</body>
+	
+    <!-- JavaScript Libraries -->
+
+    <!-- jQuery! -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+	<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+
+    <!-- TextFit resizes text to fill a container.
+        It's used so the titles and game words fit properly on any size screen.  -->
+    <script type="text/javascript" src="js/textFit.min.js"></script>
+
+    <!-- FastClick is used to eliminate the 300ms delay when clicking items on a mobile deviced-->
+    <script type="text/javascript" src="js/fastclick.js"></script>
+
+    <!-- If Socket.IO is used with Express, then the /socket.io/ path will
+        serve the proper Socket.IO javascript files used by the browser -->
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+
+    <!-- app.js is where all the client-side Succ.io game logic is contained -->
+    <script type="text/javascript" src="client_logic.js"></script>	
+</html>

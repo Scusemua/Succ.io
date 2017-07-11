@@ -1,0 +1,108 @@
+body{
+	background-color: #ddd;
+	font-family: Helvetica Neue, Arial;
+}
+
+#btnConfirmNickname {
+	margin: 10px;
+	padding: 10px;
+	font-size: 16px;
+}
+
+#btnConfirmGameId {
+	margin: 10px;
+	padding: 10px;
+	font-size: 16px;	
+}
+
+#main-banner {
+	font-size: 100px;
+	width: 100%;
+}
+
+#nickname-container {
+	width: 350px;
+	height: 175px;
+	margin: auto;
+}
+
+.container {
+	background-color: #FF2D2D; /* Red */
+	color: white;
+}
+
+.info-prompt {
+	text-align: center;
+	top: 40%;
+	left: 50%;
+	height: 230px;
+	width: 350px;
+	position: absolute;
+    top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	margin: auto;
+	background-color: #eee;
+	z-index: 2;
+	padding: 10px;
+}
+
+#gameArea {
+    height: 100%;
+    width: 100%;
+}
+
+.stacked-button {
+	display: table;
+	vertical-align: center;
+	margin: 0 auto;
+	padding: 10px;
+	font-size: 16px;
+}
+
+.semi-transparent-button {
+  box-sizing: border-box;
+  width: 80%;
+  max-width: 200px;
+  background: #FF4747; 
+  border-radius: 8px;
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  letter-spacing: 1px;
+  transition: all 0.3s ease-out;
+}
+
+.semi-transparent-button:hover,
+.semi-transparent-button:focus,
+.semi-transparent-button:active {
+  background: #FF7C7C;
+  color: #000;
+  transition: all 0.5s ease-in;
+}
+
+nav ul{height:200px; width:100%;}
+nav ul{overflow:hidden; overflow-y:scroll;}
+
+table, th, td {
+    border: 1px solid black;
+	border-collapse: collapse;
+}
+
+th, td {
+    padding: 15px;
+}
+
+th {
+    text-align: left;
+}
+
+#btnHostStartGame {
+	float: center;
+	padding: 10px;
+	font-size: 24px;
+	display: table; 
+	margin: 0 auto;
+	margin-top: 15px;
+}
