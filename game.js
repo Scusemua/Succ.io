@@ -73,7 +73,7 @@ function playerJoinGame(data) {
 		// Join the room.
 		sock.join(data.gameId);
 		
-		// Data that isn't to go to all the other clients
+		// Data that isn't to go to all the other clients	
 		var personalData = {
 			room: room,
 			gameId: data.gameId
