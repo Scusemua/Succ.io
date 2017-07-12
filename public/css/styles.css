@@ -106,3 +106,21 @@ th {
 	margin: 0 auto;
 	margin-top: 15px;
 }
+
+#players-waiting { 
+	margin: 0; 
+	padding: 0; 
+}
+#players-waiting li { 
+	padding: 5px 10px; 
+	display: list-item;
+	list-style-type: none; 
+}
+#players-waiting li:nth-child(odd) { 
+	background: #eee; 
+}
+
+#btn-send-message {
+	width: 10%; 
+	min-width: 70px;
+}

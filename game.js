@@ -61,8 +61,6 @@ function playerJoinGame(data) {
 	// Reference to the player's Socket.IO 
 	var sock = this;
 	
-	console.log(gameSocket.adapter.rooms);
-	
 	// Look up the room ID in the Socket.IO manager object;
 	var room = gameSocket.adapter.rooms[data.gameId];
 	
@@ -77,7 +75,7 @@ function playerJoinGame(data) {
 		console.log('Player ' + data.playerName + ' successfully joining game: ' + data.gameId );
 		
 		// Emit an event notifying other clients that the player has joined the room.
-		io.sockets.in(data.game).emit('playerJoinedRoom', data);
+		sock.broadcast.to(data.gameId).emit('playerJoinedRoom', data);
 	} else {
 		this.emit('error', {message: "This room does not exist."} );
 	}

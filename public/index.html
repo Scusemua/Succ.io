@@ -23,7 +23,7 @@
 		
 		</div>		
 		
-		<div id="chatArea">
+		<div id="hostStartBtnArea">
 		
 		</div>	
 
@@ -61,7 +61,7 @@
 			</div>
 		</script>	
 		
-		<script id="new-game-template-non-host" type="text/template">
+		<script id="new-game-template" type="text/template">
             <div id="gameCode">Error!</div>
 			<div>
 				<table class=".table-striped" width="100%" style="margin: 0px; padding: 0px;">
@@ -76,71 +76,45 @@
 									#messages { list-style-type: none; margin: 0; padding: 0; }
 									#messages li { padding: 5px 10px; }
 									#messages li:nth-child(odd) { background: #eee; }
-									form { background: #FFB6B6; padding: 3px; bottom: 0; }
-									form input { border: 0; padding: 10px; width: 50%; margin-right: .5%; }
-									form button { width: 10%; background: #E14444; border: none; padding: 10px; min-width: 70px; }
 								</style>
 								<div id="chat-window">
 									<nav>
 										<ul id="messages"></ul>
-										<form id="message-box-form" onSubmit="return false;">
-											<input id="message-box" autocomplete="off"/> <button id="btn-send-message" type="button" class="btn btn-main">Send</button>
-										</form>
 									</nav>
 								</div>					
 							</div>						
 						</td>
 						<td style="width: 30%;">
-							<div id="players-waiting">
-								<ul id="players-waiting-list"></ul>
-							</div>						
+							<div>
+								<style>
+									#players-waiting-list { list-style-type: none; margin: 0; padding: 0;}
+									#players-waiting-list li:nth-child(odd) { background: #FFC6C6; }
+									#players-waiting-list li:nth-child(even) { background: #FFD9D9; }
+								</style>							
+								<div id="players-waiting">
+									<nav>
+										<ul id="players-waiting-list"></ul>																
+									</nav>
+								</div>									
+							</div>
 						</td>
 					</tr>
 				</table>
+				<style>
+					form { background: #FFECEC; padding: 3px; bottom: 0; }
+					form input { border: 0; padding: 10px; width: 50%; margin-right: .5%; }
+				</style>
+				<form id="message-box-form" onSubmit="return false;">
+				<input id="message-box" autocomplete="off"/> <input id="btn-send-message" type="submit" class="semi-transparent-button" value="Send"/>
+				</form>
 			</div>
 		</script>
 		
-		<script id="new-game-template-host" type="text/template">
-            <div id="gameCode">Error!</div>
-			<div>
-				<table class=".table-striped" width="100%" style="margin: 0px; padding: 0px;">
-					<tr>
-						<th colspan="1">Chat</th>
-						<th>Players Waiting</th>
-					</tr>
-					<tr>
-						<td style="width: 70%;">
-							<div>
-								<style>
-									#messages { list-style-type: none; margin: 0; padding: 0; }
-									#messages li { padding: 5px 10px; }
-									#messages li:nth-child(odd) { background: #eee; }
-									form { background: #FFB6B6; padding: 3px; bottom: 0; }
-									form input { border: 0; padding: 10px; width: 50%; margin-right: .5%; }
-									form button { width: 10%; background: #E14444; border: none; padding: 10px; min-width: 70px; }
-								</style>
-								<div id="chat-window">
-									<nav>
-										<ul id="messages"></ul>
-										<form id="message-box-form" onSubmit="return false;">
-											<input id="message-box" autocomplete="off"/> <button id="btn-send-message" type="button" class="btn btn-main">Send</button>
-										</form>
-									</nav>
-								</div>					
-							</div>						
-						</td>
-						<td style="width: 30%;">
-							<div id="players-waiting">
-								<ul id="players-waiting-list"></ul>
-							</div>						
-						</td>
-					</tr>
-				</table>
-			</div>
+		<script id="host-start-button-template" type="text/template">
 			<div>
 				<input id="btnHostStartGame" class="semi-transparent-button" type="submit" value="Start Game"/>
 			</div>
-		</script>		
+		</script>
 	</body>
 	
     <!-- JavaScript Libraries -->

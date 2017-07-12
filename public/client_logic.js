@@ -29,21 +29,31 @@ jQuery(function($) {
 			IO.socket.on('beginNewGame', IO.beginNewGame);
 			IO.socket.on('gameOver', IO.gameOver);
 			IO.socket.on('error', IO.error);
+			IO.socket.on('chat message', function(msg) {
+				$('#messages').append($('<li>').text(msg));
+			});			
 			$(document).on('click', '#btn-send-message', function() {
-				var msg = App.Player.myName + ': ' + $('#message-box').val();
-				socket.emit('chat message', $(msg);
+				// Grab the text and verify that it isn't empty or just spaces.
+				var msg = $('#message-box').val();
+				var valid = App.verifyText(msg);
+				if (!valid) return null;
+				// Append the player's name to the message.
+				msg = App.Player.myName + ': ' +  msg;
+				IO.socket.emit('chat message', msg);
 				$('#message-box').val('');
 				return false;
 			});
 			$(document).on('submit', '#message-box-form', function() {
-				var msg = App.Player.myName + ': ' + $('#message-box').val();
-				socket.emit('chat message', msg);
+				// Grab the text and verify that it isn't empty or just spaces.
+				var msg = $('#message-box').val();
+				var valid = App.verifyText(msg);
+				if (!valid) return null;
+				// Append the player's name to the message.
+				msg = App.Player.myName + ': ' +  msg;
+				IO.socket.emit('chat message', msg);
 				$('#message-box').val('');
 				return false;
 			});				
-			IO.socket.on('chat message', function(msg) {
-				$('#messages').append($('<li>').text(msg));
-			});
 		},
 	
 		/**
@@ -128,12 +138,13 @@ jQuery(function($) {
 
 			// Templates
 			App.$gameArea = $('#gameArea');
+			App.$hostStartBtnArea = $('#hostStartBtnArea');
+			
 			App.$templateJoinCreate = $('#join-create-template').html();
 			App.$templateNickname = $('#nickname-template').html();
-			App.$templateNewGameHost = $('#new-game-template-host').html();
-			App.$templateNewGameNonHost = $('#new-game-template-non-host').html();
+			App.$templateHostStartBtn = $('#host-start-button-template').html();
+			App.$templateNewGame = $('#new-game-template').html();
 			App.$templateJoinGame = $('#join-game-template').html();
-			App.$hostGame = $('#host-game-template').html();
 		},
 		 
 		/**
@@ -203,11 +214,14 @@ jQuery(function($) {
 			// the unique game ID.
 			displayNewGameScreen: function() {
 				// Fill the game area with the appropriate HTMl
-				App.$gameArea.html(App.$templateNewGameHost);
+				App.$gameArea.html(App.$templateNewGame);
+				App.$hostStartBtnArea.html(App.$templateHostStartBtn);
 
 				// Show the gameID / room ID on the screen.
 				$('#gameCode').text('Room #: ' + App.gameId);
 				App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
+				
+				$('#players-waiting-list').append($('<li>').text(App.Player.myName));	
 			}
 		},
 		 
@@ -236,13 +250,6 @@ jQuery(function($) {
 			onPlayerConfirmNicknameClick: function() {
 				var playerName = $('#inputPlayerName').val();
 				
-				// Ensure the player entered something in the textbox.
-				if (playerName == '') 
-				{
-					alert("ERROR: You must enter something for your nickname.");
-					return false;	
-				}
-				
 				if (playerName.length > 25) 
 				{
 					alert("ERROR: Your nickname cannot exceed twenty-five (25) characters.");
@@ -250,15 +257,9 @@ jQuery(function($) {
 				}
 				
 				// Verify that the player didn't just enter spaces.
-				var flag = false;
-				for (var x = 0; x < playerName.length; x++) 
-				{
-					var c = playerName.charAt(x);
-					if (c != " ") flag = true;
-				}
-				if (!flag) 
-				{
-					alert("ERROR: Your name cannot consist of solely space characters.");
+				var valid = App.verifyText(playerName);
+				if (!valid) {
+					alert("Error: Name must have a non-space character!");
 					return false;
 				}
 				
@@ -301,11 +302,13 @@ jQuery(function($) {
 			// Display the new game screen. This screen won't have a "start" button since this is the player and not the host.
 			displayNewGameScreen: function() {
 				// Fill the game area with the appropriate HTMl
-				App.$gameArea.html(App.$templateNewGameNonHost);
+				App.$gameArea.html(App.$templateNewGame);
 
 				// Show the gameID / room ID on the screen.
 				$('#gameCode').text('Room #: ' + App.gameId);
-				App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});				
+				App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
+				
+				$('#players-waiting-list').append($('<li>').text(App.Player.myName));	
 			}
 		},
 		 
@@ -325,11 +328,22 @@ jQuery(function($) {
 			);
 		},
 		
+		// Add a player's name to the list of waiting players.
 		updateWaitingScreen: function(data) {
-			console.log('update waiting screen: ' + data);
-			var list = App.$doc.findElementById("#players-waiting-list").html();
-			list.append(data.playerName);
-		}
+			$('#players-waiting-list').append($('<li>').text(data.playerName));
+		},
+		
+		// Returns true if the given string consists of at least one character that isn't a space.
+		verifyText: function(str) {
+			if (str == "") return false;
+			var flag = false;
+			for (var x = 0; x < str.length; x++) 
+			{
+				var c = str.charAt(x);
+				if (c != " ") flag = true;
+			}
+			return flag;
+		}			
 	};
 	IO.init();
     App.init();

@@ -21,11 +21,9 @@ io.sockets.on('connection', function(socket){
 	var address = socket.request.connection.remoteAddress;
 	console.log('A Client has connected from ' + address);
 	game.initGame(io, socket);
-	
 	socket.on('disconnect', function() {
 		console.log("A Client has disconnected.");
 	});
-	
 	socket.on('chat message', function(msg) {
 		io.emit('chat message', msg);
 	});	
