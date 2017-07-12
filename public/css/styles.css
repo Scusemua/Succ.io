@@ -9,6 +9,10 @@ body{
 	font-size: 16px;
 }
 
+#gameCode {
+	color: #464646;
+}
+
 #btnConfirmGameId {
 	margin: 10px;
 	padding: 10px;
@@ -123,4 +127,30 @@ th {
 #btn-send-message {
 	width: 10%; 
 	min-width: 70px;
+}
+
+#players-waiting-list {
+	list-style-type: none; 
+	margin: 0; 
+	padding: 0;
+}
+
+#players-waiting-list li:nth-child(odd) { background: #FFC6C6; }
+#players-waiting-list li:nth-child(even) { background: #FFD9D9; }
+
+#messages { list-style-type: none; margin: 0; padding: 0; }
+#messages li { padding: 5px 10px; }
+#messages li:nth-child(odd) { background: #eee; }
+
+#message-box-form {
+	background: #FFECEC; 
+	padding: 3px; 
+	bottom: 0;
+}
+
+#message-box-form input {
+	border: 0; 
+	padding: 10px; 
+	width: 50%; 
+	margin-right: .5%;
 }

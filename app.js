@@ -23,10 +23,16 @@ io.sockets.on('connection', function(socket){
 	game.initGame(io, socket);
 	socket.on('disconnect', function() {
 		console.log("A Client has disconnected.");
+		io.emit('player-disconnected', socket.id);
 	});
 	socket.on('chat message', function(msg) {
 		io.emit('chat message', msg);
 	});	
+	// Emit countdown events to the users which will
+	// display the countdown in the chat.
+	socket.on('countdown', function(data) {
+		io.emit('chat message', data.count);
+	});
 });
 
 server.listen(4200);

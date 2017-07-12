@@ -61,7 +61,7 @@
 			</div>
 		</script>	
 		
-		<script id="new-game-template" type="text/template">
+		<script id="lobby-template" type="text/template">
             <div id="gameCode">Error!</div>
 			<div>
 				<table class=".table-striped" width="100%" style="margin: 0px; padding: 0px;">
@@ -72,11 +72,6 @@
 					<tr>
 						<td style="width: 70%;">
 							<div>
-								<style>
-									#messages { list-style-type: none; margin: 0; padding: 0; }
-									#messages li { padding: 5px 10px; }
-									#messages li:nth-child(odd) { background: #eee; }
-								</style>
 								<div id="chat-window">
 									<nav>
 										<ul id="messages"></ul>
@@ -85,12 +80,7 @@
 							</div>						
 						</td>
 						<td style="width: 30%;">
-							<div>
-								<style>
-									#players-waiting-list { list-style-type: none; margin: 0; padding: 0;}
-									#players-waiting-list li:nth-child(odd) { background: #FFC6C6; }
-									#players-waiting-list li:nth-child(even) { background: #FFD9D9; }
-								</style>							
+							<div>						
 								<div id="players-waiting">
 									<nav>
 										<ul id="players-waiting-list"></ul>																
@@ -100,14 +90,14 @@
 						</td>
 					</tr>
 				</table>
-				<style>
-					form { background: #FFECEC; padding: 3px; bottom: 0; }
-					form input { border: 0; padding: 10px; width: 50%; margin-right: .5%; }
-				</style>
 				<form id="message-box-form" onSubmit="return false;">
-				<input id="message-box" autocomplete="off"/> <input id="btn-send-message" type="submit" class="semi-transparent-button" value="Send"/>
+					<input id="message-box" autocomplete="off"/> <input id="btn-send-message" type="submit" class="semi-transparent-button" value="Send"/>
 				</form>
 			</div>
+		</script>
+		
+		<script id="game-template" type="text/template">
+		
 		</script>
 		
 		<script id="host-start-button-template" type="text/template">

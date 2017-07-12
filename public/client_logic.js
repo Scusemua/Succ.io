@@ -24,11 +24,14 @@ jQuery(function($) {
 		 */
 		bindEvents : function() {
 			IO.socket.on('connected', IO.onConnected);
+			IO.socket.on('player-disconnected', App.playerDisconnected);
 			IO.socket.on('newGameCreated', IO.onNewGameCreated);
 			IO.socket.on('playerJoinedRoom', IO.playerJoinedRoom);
+			IO.socket.on('youJoinedRoom', App.Player.youJoinedRoom);
 			IO.socket.on('beginNewGame', IO.beginNewGame);
 			IO.socket.on('gameOver', IO.gameOver);
-			IO.socket.on('error', IO.error);
+			IO.socket.on('error-occurred', IO.error);
+			IO.socket.on('game-started', IO.updateGameScreen);
 			IO.socket.on('chat message', function(msg) {
 				$('#messages').append($('<li>').text(msg));
 			});			
@@ -79,8 +82,12 @@ jQuery(function($) {
 		 */
 		playerJoinedRoom : function(data) {
 			// When a player joins the lobby, do the updateWaitingScreen function.
-			// There is a version of this function for the host and for the player.
 			App.updateWaitingScreen(data);
+		},
+		
+		// Update the game screen such that the UI for the actual game is shown.
+		updateGameScreen: function() {
+			App.updateGameScreen();
 		},
 	  
 		/**
@@ -88,7 +95,7 @@ jQuery(function($) {
 		* @param data
 		*/
 		error : function(data) {
-				alert(data.message);
+			alert(data.message);
 		}		
 	};
 	
@@ -109,6 +116,11 @@ jQuery(function($) {
 		 * Identifies the current round. Rounds start at Round 0.
 		 */
 		currentRound: 0,
+		
+		/**
+		 * Used when displaying the count-down in the chat box when the host clicks start.
+		 */
+		counter: 5,	
 		
 		//
 		//
@@ -143,8 +155,9 @@ jQuery(function($) {
 			App.$templateJoinCreate = $('#join-create-template').html();
 			App.$templateNickname = $('#nickname-template').html();
 			App.$templateHostStartBtn = $('#host-start-button-template').html();
-			App.$templateNewGame = $('#new-game-template').html();
+			App.$templateLobby = $('#lobby-template').html();
 			App.$templateJoinGame = $('#join-game-template').html();
+			App.$templateGame = $('#game-template').html();
 		},
 		 
 		/**
@@ -157,6 +170,7 @@ jQuery(function($) {
 			App.$doc.on('click', '#btnCreate', App.Host.onCreateClick);
 			App.$doc.on('click', '#btnConfirmNickname', App.Player.onPlayerConfirmNicknameClick);
 			App.$doc.on('click', '#btnConfirmGameId', App.Player.onJoinGameConfirmClick);
+			App.$doc.on('click', '#btnHostStartGame', App.Host.onStartClick);
 		}, 
 		
 		// Displays the Join Game / Create Game template.
@@ -171,6 +185,53 @@ jQuery(function($) {
         showInitScreen: function() {
             App.$gameArea.html(App.$templateNickname);
         },		
+		
+		 
+		// Make the text inside the given element as big as possible.
+		// Uses the textFit library.
+		// @param el The parent element of some text.
+		doTextFit : function(el) {
+			textFit(
+				$(el)[0],
+				{
+					alignHoriz:true,
+					alignVert:false,
+					widthOnly:true,
+					reProcess:true,
+					maxFontSize:128
+				}
+			);
+		},
+		
+		// Add a player's name to the list of waiting players.
+		updateWaitingScreen: function(data) {
+			$('#players-waiting-list').append($('<li>').text(data.playerName));
+		},
+		
+		// Display the actual game UI (not waiting room or otherwise).
+		updateGameScreen: function() {
+			App.$gameArea.html(App.$templateGame);
+		},
+		
+		// Returns true if the given string consists of at least one character that isn't a space.
+		verifyText: function(str) {
+			if (str == "") return false;
+			var flag = false;
+			for (var x = 0; x < str.length; x++) 
+			{
+				var c = str.charAt(x);
+				if (c != " ") flag = true;
+			}
+			return flag;
+		},		
+
+		// Executes when a player has disconnected from the room in which this client resides.
+		// The data passed to the function is the socket id of the disconnected client. This
+		// is used to remove that list element from the players waiting list.
+		playerDisconnected: function(data) {
+			var elementId = "listElement_" + data;
+			$('#' + elementId).parent().remove();
+		},
 		 
 		///
 		///
@@ -214,14 +275,36 @@ jQuery(function($) {
 			// the unique game ID.
 			displayNewGameScreen: function() {
 				// Fill the game area with the appropriate HTMl
-				App.$gameArea.html(App.$templateNewGame);
+				App.$gameArea.html(App.$templateLobby);
 				App.$hostStartBtnArea.html(App.$templateHostStartBtn);
 
 				// Show the gameID / room ID on the screen.
 				$('#gameCode').text('Room #: ' + App.gameId);
 				App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
 				
-				$('#players-waiting-list').append($('<li>').text(App.Player.myName));	
+				var elementId = "listElement_" + App.mySocketId;
+				$('#players-waiting-list').append($('<li id=' + elementId + '>').text(App.Player.myName));	
+			},
+			
+			onStartClick: function() {
+				// Tell the server that the host clicked start.
+				// App.$gameArea.html(App.$templateActualGame);
+				var intervalId;
+				IO.socket.emit('chat message', "HOST STARTED THE GAME - COUNTING DOWN");
+				interval: intervalId = setInterval(function() {
+					var data = {
+						count: App.counter
+					}
+					// Emit a countdown to the server which will then start displaying the count-down in the chat to the users.
+					IO.socket.emit('countdown', data);
+					App.counter--;
+					// Display 'counter' wherever you want to display it.
+					if (App.counter == 0) {
+						// Tell the server that the game is starting.
+						IO.socket.emit('game-starting', App.gameId);
+						clearInterval(intervalId);
+					}
+				}, 1000)
 			}
 		},
 		 
@@ -265,7 +348,8 @@ jQuery(function($) {
 				
 				// Set the appropriate properties for the current player.
 				// App.myRole = 'Player';
-				App.Player.myName = playerName;				
+				App.Player.myName = playerName;	
+				IO.socket.nickname = playerName;
 				 
 				// Send the gameId and playerName to the server.
 				App.displayJoinCreateMenu();
@@ -292,58 +376,32 @@ jQuery(function($) {
 				
                 // Send the gameId and playerName to the server
                 IO.socket.emit('playerJoinGame', data);
-
-                // Set the appropriate properties for the current player.
-                App.myRole = 'Player';		
-
-				App.Player.displayNewGameScreen();
 			},
 			
 			// Display the new game screen. This screen won't have a "start" button since this is the player and not the host.
 			displayNewGameScreen: function() {
 				// Fill the game area with the appropriate HTMl
-				App.$gameArea.html(App.$templateNewGame);
+				App.$gameArea.html(App.$templateLobby);
 
 				// Show the gameID / room ID on the screen.
 				$('#gameCode').text('Room #: ' + App.gameId);
 				App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
 				
-				$('#players-waiting-list').append($('<li>').text(App.Player.myName));	
-			}
+				var elementId = "listElement_" + App.mySocketId;
+				$('#players-waiting-list').append($('<li id=' + elementId + '>').text(App.Player.myName));	
+			},
+			
+			// Fired when this client successfully joins a room.
+			youJoinedRoom: function(data) {
+				console.log(data.room);
+				// Set the appropriate properties for the current player.
+				App.myRole = 'Player';		
+
+				App.gameId = data.gameId;
+				
+				App.Player.displayNewGameScreen();			
+			}			
 		},
-		 
-		// Make the text inside the given element as big as possible.
-		// Uses the textFit library.
-		// @param el The parent element of some text.
-		doTextFit : function(el) {
-			textFit(
-				$(el)[0],
-				{
-					alignHoriz:true,
-					alignVert:false,
-					widthOnly:true,
-					reProcess:true,
-					maxFontSize:128
-				}
-			);
-		},
-		
-		// Add a player's name to the list of waiting players.
-		updateWaitingScreen: function(data) {
-			$('#players-waiting-list').append($('<li>').text(data.playerName));
-		},
-		
-		// Returns true if the given string consists of at least one character that isn't a space.
-		verifyText: function(str) {
-			if (str == "") return false;
-			var flag = false;
-			for (var x = 0; x < str.length; x++) 
-			{
-				var c = str.charAt(x);
-				if (c != " ") flag = true;
-			}
-			return flag;
-		}			
 	};
 	IO.init();
     App.init();

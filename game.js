@@ -7,13 +7,11 @@ var gameSocket;
 exports.initGame = function(sio, socket) {
 	io = sio;
 	gameSocket = socket;
-	gameSocket.emit('connected', { message: "You are connected!" });
+	gameSocket.emit('connected', { message: "You are connected!"});
 	
 	// Host Events
 	gameSocket.on('hostCreateNewGame', hostCreateNewGame);
-	// gameSocket.on('hostRoomFull', hostPrepareGame);
-	gameSocket.on('hostCountdownFinished', hostStartGame);
-	// gameSocket.on('hostNextRound', hostNextRound);
+	gameSocket.on('game-starting', gameStarting);
 	
 	// Player Events
 	gameSocket.on('playerJoinGame', playerJoinGame);
@@ -41,8 +39,11 @@ function hostCreateNewGame() {
 	this.join(thisGameId.toString());
 };
 
-function hostStartGame(gameId) {
-	console.log('Game Started.');
+function gameStarting(gameId) {
+	console.log('Game ' + gameId + ' Started.');
+	var sock = this;
+	// Tell all of the players that the game has started.
+	sock.broadcast.to(gameId).emit('game-started', data);
 }
 
 ///
@@ -61,7 +62,7 @@ function playerJoinGame(data) {
 	// Reference to the player's Socket.IO 
 	var sock = this;
 	
-	// Look up the room ID in the Socket.IO manager object;
+	// Look up the room ID.
 	var room = gameSocket.adapter.rooms[data.gameId];
 	
 	// If the room exists, attempt to join. Otherwise, present error message.
@@ -72,11 +73,19 @@ function playerJoinGame(data) {
 		// Join the room.
 		sock.join(data.gameId);
 		
+		// Data that isn't to go to all the other clients
+		var personalData = {
+			room: room,
+			gameId: data.gameId
+		}
+		
+		sock.emit('youJoinedRoom', personalData);
+		
 		console.log('Player ' + data.playerName + ' successfully joining game: ' + data.gameId );
 		
 		// Emit an event notifying other clients that the player has joined the room.
 		sock.broadcast.to(data.gameId).emit('playerJoinedRoom', data);
 	} else {
-		this.emit('error', {message: "This room does not exist."} );
+		this.emit('error-occurred', {message: "This room does not exist."} );
 	}
 }
