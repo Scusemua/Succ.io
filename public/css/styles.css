@@ -48,13 +48,14 @@ body {
     width: 100%;
 	top: 0;
 	left: 0;
-	position: fixed;
 }
 
 /* This is the main banner across the top of the page */
 #main-banner {
 	font-size: 100px;
 	width: 100%;
+	opacity: 0.85;
+	z-index: 1;
 }
 
 .banner-container {
@@ -62,21 +63,12 @@ body {
 	color: white;
 }
 
-/* Attempts to make panels the same height */
-.equal {
-	display: -ms-flexbox;
-	display: -webkit-flex;
-	display: flex;
-}
-
 nav ul{height: 12em; }
 nav ul{overflow:hidden; overflow-y:scroll;}
 
 /* Button which the host of a game lobby presses to move from the pre-game lobby to the actual game */
 #btnHostStartGame {
-	padding: 10px;
 	font-size: 24px;
-	margin: 0em 1em 0em 1em;
 }
 
 /* The <ul> itself for the players waiting list */
@@ -96,14 +88,18 @@ nav ul{overflow:hidden; overflow-y:scroll;}
     transition-duration: 0.4s;
 }
 .btn:hover {
-	background-color: #337ab7;
+	background-color: #337ab7 !important;
+	color: #FFFFFF !important;
 }
 
 /* Reference to the <ul> itself (specifically the odd numbered <li> within the <ul>) */
 #players-waiting-list li:nth-child(odd) { background: #eee; }
 
 #messages { list-style-type: none; margin: 0; padding: 0; }
-#messages li { padding: 5px 10px; }
+#messages li { 
+	padding: 5px 10px; 
+	word-wrap: break-word;
+}
 #messages li:nth-child(odd) { background: #eee; }
 
 /* This is the input form in which the user types a chat message that they intend to send */
@@ -113,4 +109,11 @@ nav ul{overflow:hidden; overflow-y:scroll;}
 	height: 3em;
 	margin-top: 0.25em;
 	margin-right: .5%;
+}
+
+footer {
+	position: fixed;
+    bottom: 0;
+    width: 100%;
+	text-align: center;
 }

@@ -23,9 +23,13 @@
 			
 			</div>		
 			
-			<div id="hostStartBtnArea">
+			<div id="hostStartBtnArea" style="margin-bottom: 1em">
 			
 			</div>
+			
+			<footer>
+				<h5>© Benjamin Carver 2017</h5>
+			</footer>				
 		</div>
 
 		<script id="nickname-template" type="text/template">
@@ -70,8 +74,9 @@
 		<script id="lobby-template" type="text/template">
 			<div class="container-fluid"> 
 				<div id="gameCode">Error!</div>
-				<div class="row equal">
-					<div class="col-lg-9 col-md-9 col-sm-9">
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-lg-9 col-md-9 col-sm-6">
 						<div class="panel panel-primary">
 							<div id="chat-panel-heading" class="panel-heading">
 								<h3 class="panel-title">Chat</h3>
@@ -88,7 +93,7 @@
 							</div>
 						</div>			
 					</div>		
-					<div class="col-lg-3 col-md-3 col-sm-3">
+					<div class="col-lg-3 col-md-3 col-sm-6">
 						<div class="panel panel-primary">
 							<div id="players-waiting-panel" class="panel-heading">
 								<h3 class="panel-title">Players Waiting</h3>
@@ -102,19 +107,21 @@
 							</div>
 						</div>	
 					</div>						
-				</div>
+				</div>			
 			</div>
 		</script>
 		
 		<script id="game-template" type="text/template">
-		
+			<div class="row equal">
+				
+			</div>
 		</script>
 		
 		<script id="host-start-button-template" type="text/template">
-			<div>
-				<a href="#" id="btnHostStartGame" class="btn btn-block btn-lg btn-success">Start Game</a>
+			<div class="container-fluid">
+				<a href="#" id="btnHostStartGame" class="btn btn-block btn-lg btn-default">Start Game</a>
 			</div>
-		</script>
+		</script>	
 	</body>
 	
     <!-- JavaScript Libraries -->
@@ -136,4 +143,15 @@
 
     <!-- app.js is where all the client-side Succ.io game logic is contained -->
     <script type="text/javascript" src="client_logic.js"></script>	
+	
+	<script>
+	$('.smooth').on('click', function() {
+		$.smoothScroll({
+			scrollElement: $('body'),
+			scrollTarget: '#' + this.id
+		});
+		
+		return false;
+	});
+	</script>
 </html>
