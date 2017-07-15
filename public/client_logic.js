@@ -35,7 +35,7 @@ jQuery(function($) {
 			IO.socket.on('chat message', function(msg) {
 				$('#messages').append($('<li>').text(msg));
 			});			
-			$(document).on('click', '#btn-send-message', function() {
+			/*$(document).on('click', '#btn-send-message', function() {
 				// Grab the text and verify that it isn't empty or just spaces.
 				var msg = $('#message-box').val();
 				var valid = App.verifyText(msg);
@@ -45,7 +45,7 @@ jQuery(function($) {
 				IO.socket.emit('chat message', msg);
 				$('#message-box').val('');
 				return false;
-			});
+			});*/
 			$(document).on('submit', '#message-box-form', function() {
 				// Grab the text and verify that it isn't empty or just spaces.
 				var msg = $('#message-box').val();
@@ -177,7 +177,7 @@ jQuery(function($) {
 		displayJoinCreateMenu: function() {
 			// Animate transition.
 			App.$gameArea.html(App.$templateJoinCreate).hide();
-			App.$gameArea.fadeIn('slow');
+			App.$gameArea.fadeIn();
 		},
 		
         /**
@@ -187,7 +187,7 @@ jQuery(function($) {
         showInitScreen: function() {
 			// Animate the transition.
             App.$gameArea.html(App.$templateNickname).hide();
-			App.$gameArea.fadeIn('slow');
+			App.$gameArea.fadeIn();
         },		
 		
 		 
@@ -211,7 +211,7 @@ jQuery(function($) {
 		updateGameScreen: function() {
 			// Animate the transition.
 			App.$gameArea.html(App.$templateGame).hide();
-			App.$gameArea.fadeIn('slow');
+			App.$gameArea.fadeIn();
 		},
 		
 		// Returns true if the given string consists of at least one character that isn't a space.
@@ -335,7 +335,7 @@ jQuery(function($) {
 			onJoinClick: function() {
 				// We call .hide() and then .fadeIn() to animate the transition to the new UI.
 				App.$gameArea.html(App.$templateJoinGame).hide();
-				App.$gameArea.fadeIn('slow');
+				App.$gameArea.fadeIn();
 			},
 			 
 			// Handler for when the Player entered their name and gameID
@@ -392,7 +392,7 @@ jQuery(function($) {
 			displayNewGameScreen: function(data) {
 				// Fill the game area with the appropriate HTMl
 				App.$gameArea.html(App.$templateLobby).hide();
-				App.$gameArea.fadeIn('slow');
+				App.$gameArea.fadeIn();
 
 				// Show the gameID / room ID on the screen.
 				$('#gameCode').text('Room #: ' + App.gameId);

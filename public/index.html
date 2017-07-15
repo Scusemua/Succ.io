@@ -12,83 +12,98 @@
 	<body>	
 <!--[if lt IE 7]>
 <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-<![endif]--> 
-		<div class="container" id="main-banner">
-			<p>Succ.io</p>
-		</div>  
+<![endif]--> 	
+		<div id="parent">
+			<div class="container banner-container" id="main-banner">
+				<p>Succ.io</p>
+			</div>  			
 		
 			<!-- This is where templates will be used -->
-		<div id="gameArea">
-		
-		</div>		
-		
-		<div id="hostStartBtnArea">
-		
-		</div>	
+			<div id="gameArea">
+			
+			</div>		
+			
+			<div id="hostStartBtnArea">
+			
+			</div>
+		</div>
 
 		<script id="nickname-template" type="text/template">
-			<div class="panel panel-default info-prompt"> 
-				<div class="panel-heading" style="color: #212121;">Please enter a nickname.</div>
-				<div class="panel-body">
-					<input id="inputPlayerName" type="text" class="form-control" placeholder="Enter name here." autocomplete="off" style="margin-top: 1.5em;"/> 	
-					<span class="input-group-btn">
-						<input id="btnConfirmNickname" class="semi-transparent-button" type="submit" value="Confirm" style="margin-top: 1em;"/>
-					</span>				
+			<div class="panel panel-primary info-prompt"> 
+				<div class="panel-heading">
+					<h4 class="panel-title">Please enter a nickname.</h4>
 				</div>
-			</div>	
+			<div class="panel-body">
+				<input id="inputPlayerName" type="text" class="form-control" placeholder="Enter name here." autocomplete="off" style="margin-top: 1.5em;"/> 	
+				<span class="input-group-btn">
+					<input id="btnConfirmNickname" class="btn btn-default menu-button" type="submit" value="Confirm" style="margin-top: 1.5em;"/>
+				</span>				
+			</div>
 		</script>
 		
 		<script id="join-create-template" type="text/template">
-			<div class="panel panel-default info-prompt">
-				<div class="panel-heading" style="color: #212121;">Join Game or Create Game?</div>
+			<div class="panel panel-primary info-prompt">
+				<div class="panel-heading">
+					<h4 class="panel-title">Join Game or Create Game?</h4>
+				</div>
 				<div class="panel-body">
-					<input id="btnJoin" class="semi-transparent-button stacked-button" type="submit" value="Join" style="margin-top: 1em;"/>
-					<input id="btnCreate" class="semi-transparent-button stacked-button" type="submit" value="Create" style="margin-top: 1em;"/>
+					<input id="btnJoin" class="btn btn-default menu-button stacked-button" type="submit" value="Join" style="margin-top: 1.5em;"/>
+					<input id="btnCreate" class="btn btn-default menu-button stacked-button" type="submit" value="Create" style="margin-top: 1.5em;"/>
 				</div>
 			</div>
 		</script>
 		
 		<script id="join-game-template" type="text/template">
-			<div class="panel panel-default info-prompt">
-				<div class="panel-heading" style="color: #212121;">Please enter a numerical ID.</div>	
+			<div class="panel panel-primary info-prompt">
+				<div class="panel-heading">
+					<h4 class="panel-title">Please enter a numerical ID.</h4>
+				</div>	
 				<div class="panel-body">
 					<input id="inputGameId" type="number" class="form-control" placeholder="Enter ID here." autocomplete="off" style="margin-top: 1.5em;"/>  
 					<span class="input-group-btn">
-						<input id="btnConfirmGameId" class="semi-transparent-button" type="submit" value="Join Game" style="margin-top: 1em;"/>
+						<input id="btnConfirmGameId" class="btn btn-default menu-button" type="submit" value="Join Game" style="margin-top: 1.5em;"/>
 					</span>	
 				</div>
 			</div>
 		</script>	
 		
 		<script id="lobby-template" type="text/template">
-            <div id="gameCode">Error!</div>
-				<div class="col-lg-9 col-md-9 col-sm-9">
-					<div class="panel panel-default>
-						<div id="chat-panel-heading" class="panel-heading">Chat</div>
-						<div class="panel-body">
-							<div id="chat-window">
-								<nav>
-									<ul id="messages"></ul>
-								</nav>
-							</div>	
-							<form id="message-box-form" onSubmit="return false;">
-								<input id="message-box" autocomplete="off"/> <input id="btn-send-message" type="submit" class="semi-transparent-button" value="Send"/>
-							</form>					
-						</div>
-					</div>			
-				</div>		
-				<div class="col-lg-3 col-md-3 col-sm-3">
-					<div class="panel panel-default>
-						<div id="players-waiting-panel" class="panel-heading">Players Waiting</div>
-						<div class="panel-body">
-							<div id="players-waiting">
-								<nav>
-									<ul id="players-waiting-list"></ul>																
-								</nav>
-							</div>						
-						</div>
-					</div>	
+			<div class="container-fluid"> 
+				<div id="gameCode">Error!</div>
+				<div class="row equal">
+					<div class="col-lg-9 col-md-9 col-sm-9">
+						<div class="panel panel-primary">
+							<div id="chat-panel-heading" class="panel-heading">
+								<h3 class="panel-title">Chat</h3>
+							</div>
+							<div class="panel-body">
+								<div id="chat-window-container">
+									<nav>
+										<ul id="messages"></ul>
+									</nav>
+								</div>	
+								<form id="message-box-form" onSubmit="return false;">
+									<input id="message-box" class="form-control" type="text" autocomplete="off" placeholder="Type chat message here."/>
+								</form>					
+							</div>
+						</div>			
+					</div>		
+					<div class="col-lg-3 col-md-3 col-sm-3">
+						<div class="panel panel-primary">
+							<div id="players-waiting-panel" class="panel-heading">
+								<h3 class="panel-title">Players Waiting</h3>
+							</div>
+							<div class="panel-body">
+								<div id="players-waiting-container">
+									<nav>
+										<ul id="players-waiting-list"></ul>																
+									</nav>
+								</div>						
+							</div>
+						</div>	
+					</div>						
 				</div>
+			</div>
 		</script>
 		
 		<script id="game-template" type="text/template">
@@ -97,7 +112,7 @@
 		
 		<script id="host-start-button-template" type="text/template">
 			<div>
-				<input id="btnHostStartGame" class="semi-transparent-button" type="submit" value="Start Game"/>
+				<a href="#" id="btnHostStartGame" class="btn btn-block btn-lg btn-success">Start Game</a>
 			</div>
 		</script>
 	</body>

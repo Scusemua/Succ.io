@@ -3,143 +3,114 @@ body {
 	font-family: Helvetica Neue, Arial;
 }
 
+/* Button which a player presses to confirm their nickname */
 #btnConfirmNickname {
 	margin: 10px;
 	padding: 10px;
 	font-size: 16px;
 }
 
+/* This is the game code which is displayed in the pre-game lobby across the top of the screen */
 #gameCode {
 	color: #464646;
 }
 
-#btnConfirmGameId {
+/* This is the button the player presses when joining a game after typing in a game id */
+.menu-button {
+	width: 10em;
 	margin: 10px;
 	padding: 10px;
 	font-size: 16px;	
 }
 
-#main-banner {
-	font-size: 100px;
-	width: 100%;
-}
 
-#nickname-container {
-	width: 350px;
-	height: 175px;
-	margin: auto;
-}
-
-.container {
-	background-color: #0038BC; /* Blue */ 
-	color: white;
+/* to stack buttons vertically */
+.menu-button .stacked-button {
+	display: table;
+	vertical-align: center;
+	margin: 0 auto;
 }
 
 .info-prompt {
 	text-align: center;
 	top: 50%;
 	left: 50%;
-	height: 230px;
-	width: 350px;
+	height: 16em;
+	width: 25em;
 	margin: 0 auto;
 	position: absolute;
 	transform: translateX(-50%) translateY(-50%);	
 }
 
-#gameArea {
+/* This is the div which is assigned templates as the player navigates through menus and eventually joins a game */
+#parent {
     height: 100%;
     width: 100%;
+	top: 0;
+	left: 0;
+	position: fixed;
 }
 
-.stacked-button {
-	display: table;
-	vertical-align: center;
-	margin: 0 auto;
-	padding: 10px;
-	font-size: 16px;
+/* This is the main banner across the top of the page */
+#main-banner {
+	font-size: 100px;
+	width: 100%;
 }
 
-.semi-transparent-button {
-  box-sizing: border-box;
-  width: 80%;
-  max-width: 200px;
-  background: #00A152; 
-  border-radius: 8px;
-  color: #fff;
-  text-align: center;
-  text-decoration: none;
-  letter-spacing: 1px;
-  transition: all 0.3s ease-out;
+.banner-container {
+	background-color: #246EC5; /* Blue */ 
+	color: white;
 }
 
-.semi-transparent-button:hover,
-.semi-transparent-button:focus,
-.semi-transparent-button:active {
-  background: #58C998;
-  color: #000;
-  transition: all 0.5s ease-in;
+/* Attempts to make panels the same height */
+.equal {
+	display: -ms-flexbox;
+	display: -webkit-flex;
+	display: flex;
 }
 
-nav ul{height:200px; width:100%;}
+nav ul{height: 12em; }
 nav ul{overflow:hidden; overflow-y:scroll;}
 
-table, th, td {
-    border: 1px solid black;
-	border-collapse: collapse;
-}
-
-th, td {
-    padding: 15px;
-}
-
-th {
-    text-align: left;
-}
-
+/* Button which the host of a game lobby presses to move from the pre-game lobby to the actual game */
 #btnHostStartGame {
-	float: center;
 	padding: 10px;
 	font-size: 24px;
-	display: table; 
-	margin: 0 auto;
-	margin-top: 15px;
+	margin: 0em 1em 0em 1em;
 }
 
-#players-waiting { 
+/* The <ul> itself for the players waiting list */
+#players-waiting-list { 
+	list-style-type: none;
 	margin: 0; 
 	padding: 0; 
 }
-#players-waiting li { 
-	padding: 5px 10px; 
-	display: list-item;
-	list-style-type: none; 
+
+/* A single list element of the <ul> players waiting list */ 
+#players-waiting-list li { 
+	padding: 5px 10px;  
+} 
+
+.btn {
+	-webkit-transition-duration: 0.4s; /* Safari */
+    transition-duration: 0.4s;
 }
-#players-waiting li:nth-child(odd) { 
-	background: #eee; 
+.btn:hover {
+	background-color: #337ab7;
 }
 
-#btn-send-message {
-	width: 10%; 
-	min-width: 70px;
-}
-
-#players-waiting-list li:nth-child(odd) { background: #9FE0FF; }
-#players-waiting-list li:nth-child(even) { background: #BFEAFF; }
+/* Reference to the <ul> itself (specifically the odd numbered <li> within the <ul>) */
+#players-waiting-list li:nth-child(odd) { background: #eee; }
 
 #messages { list-style-type: none; margin: 0; padding: 0; }
 #messages li { padding: 5px 10px; }
 #messages li:nth-child(odd) { background: #eee; }
 
-#message-box-form {
-	background: #D9FCFF; 
-	padding: 3px; 
-	bottom: 0;
-}
-
-#message-box-form input {
-	border: 0; 
+/* This is the input form in which the user types a chat message that they intend to send */
+#message-box  {
 	padding: 10px; 
-	width: 50%; 
+	width: 100%; 
 	height: 3em;
+	margin-top: 0.25em;
 	margin-right: .5%;
 }
