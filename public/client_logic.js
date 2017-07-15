@@ -256,7 +256,7 @@ jQuery(function($) {
 			 
 			// Handler for the 'Start' button on the title screen.
 			onCreateClick: function () {
-				IO.socket.emit('hostCreateNewGame');
+				IO.socket.emit('hostCreateNewGame', App.Player.myName);
 				console.log('Create game clicked.');
 			},
 
@@ -349,16 +349,15 @@ jQuery(function($) {
 				// Set the appropriate properties for the current player.
 				// App.myRole = 'Player';
 				App.Player.myName = playerName;	
-				IO.socket.nickname = playerName;
-				 
+				// IO.socket.nickname = playerName;
+				IO.socket.emit('playerConfirmName', playerName);
+					
 				// Send the gameId and playerName to the server.
 				App.displayJoinCreateMenu();
 			},
 			
 			// Attempts to join the game with the game id entered by the user.
 			onJoinGameConfirmClick: function(data) {
-				console.log("Join game confirm clicked.");
-				
 				var gameId = $('#inputGameId').val();
 				
 				var isnum = /^\d+$/.test(gameId);
@@ -379,7 +378,7 @@ jQuery(function($) {
 			},
 			
 			// Display the new game screen. This screen won't have a "start" button since this is the player and not the host.
-			displayNewGameScreen: function() {
+			displayNewGameScreen: function(data) {
 				// Fill the game area with the appropriate HTMl
 				App.$gameArea.html(App.$templateLobby);
 
@@ -387,19 +386,20 @@ jQuery(function($) {
 				$('#gameCode').text('Room #: ' + App.gameId);
 				App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
 				
-				var elementId = "listElement_" + App.mySocketId;
-				$('#players-waiting-list').append($('<li id=' + elementId + '>').text(App.Player.myName));	
+				for (var i = 0; i < data.memberNames.length; i++) {
+					var elementId = "listElement_" + data.memberSockets[i];
+					$('#players-waiting-list').append($('<li id=' + elementId + '>').text(data.memberNames[i]));	
+				}				
 			},
 			
 			// Fired when this client successfully joins a room.
 			youJoinedRoom: function(data) {
-				console.log(data.room);
 				// Set the appropriate properties for the current player.
 				App.myRole = 'Player';		
 
 				App.gameId = data.gameId;
 				
-				App.Player.displayNewGameScreen();			
+				App.Player.displayNewGameScreen(data);			
 			}			
 		},
 	};

@@ -15,6 +15,7 @@ exports.initGame = function(sio, socket) {
 	
 	// Player Events
 	gameSocket.on('playerJoinGame', playerJoinGame);
+	gameSocket.on('playerConfirmedName', playerConfirmName);
 	// gameSocket.on('playerAnswer', playerAnswer);
 	// gameSocket.on('playerRestart', playerRestart);
 }
@@ -28,9 +29,11 @@ exports.initGame = function(sio, socket) {
 ///
 
 // The 'START' button was clicked and 'hostCreateNewGame' event occurred.
-function hostCreateNewGame() {
+function hostCreateNewGame(name) {
 	// Create a unique Socket.IO Room
 	var thisGameId = ( Math.random() * 100000) | 0;
+	
+	this.nickname = name;
 	
 	// Return the Room ID (gameId) and the socket ID (mySocketId) to the browser client.
 	this.emit('newGameCreated', {gameId: thisGameId, mySocketId: this.id});
@@ -44,7 +47,7 @@ function gameStarting(gameId) {
 	var sock = this;
 	// Tell all of the players that the game has started.
 	sock.broadcast.to(gameId).emit('game-started', data);
-}
+};
 
 ///
 ///
@@ -72,10 +75,20 @@ function playerJoinGame(data) {
 		
 		// Join the room.
 		sock.join(data.gameId);
+		sock.nickname = data.playerName;
+		
+		var memberNames = [];
+		var memberSockets = [];
+		var clients = room.sockets;
+		for (var clientId in clients) {
+			memberSockets.push(clientId);
+			memberNames.push(io.sockets.connected[clientId].nickname);
+		}
 		
 		// Data that isn't to go to all the other clients	
 		var personalData = {
-			room: room,
+			memberNames: memberNames,
+			memberSockets: memberSockets,
 			gameId: data.gameId
 		}
 		
@@ -86,6 +99,13 @@ function playerJoinGame(data) {
 		// Emit an event notifying other clients that the player has joined the room.
 		sock.broadcast.to(data.gameId).emit('playerJoinedRoom', data);
 	} else {
-		this.emit('error-occurred', {message: "This room does not exist."} );
+		sock.emit('error-occurred', {message: "This room does not exist."} );
 	}
 }
+
+// Set this socket's nickname. 
+function playerConfirmName(name) {
+	var sock = this;
+	sock.nickname = name;
+	console.log(sock.id + " , " + sock.nickname);
+};
