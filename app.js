@@ -21,6 +21,9 @@ io.sockets.on('connection', function(socket){
 	var address = socket.request.connection.remoteAddress;
 	console.log('A Client has connected from ' + address);
 	game.initGame(io, socket);
+	// When a player disconnects, we need to tell the clients
+	// so that, if that player was in their room, they can be
+	// removed from lists and whatnot.
 	socket.on('disconnect', function() {
 		console.log("A Client has disconnected.");
 		io.emit('player-disconnected', socket.id);

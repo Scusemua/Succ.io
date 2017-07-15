@@ -229,6 +229,7 @@ jQuery(function($) {
 		// The data passed to the function is the socket id of the disconnected client. This
 		// is used to remove that list element from the players waiting list.
 		playerDisconnected: function(data) {
+			console.log("Player disconnected.");
 			var elementId = "listElement_" + data;
 			$('#' + elementId).parent().remove();
 		},
@@ -283,7 +284,7 @@ jQuery(function($) {
 				App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
 				
 				var elementId = "listElement_" + App.mySocketId;
-				$('#players-waiting-list').append($('<li id=' + elementId + '>').text(App.Player.myName));	
+				$('<li id=' + elementId + '>' + App.Player.myName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
 			},
 			
 			onStartClick: function() {
@@ -386,9 +387,11 @@ jQuery(function($) {
 				$('#gameCode').text('Room #: ' + App.gameId);
 				App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
 				
+				// Add each player already in the lobby (including THIS client) to the players waiting list.
+				// We animate the additions so it looks nice.
 				for (var i = 0; i < data.memberNames.length; i++) {
 					var elementId = "listElement_" + data.memberSockets[i];
-					$('#players-waiting-list').append($('<li id=' + elementId + '>').text(data.memberNames[i]));	
+					$('<li id=' + elementId + '>' + data.memberNames[i] + '</li>').appendTo('#players-waiting-list').hide().slideDown();
 				}				
 			},
 			
