@@ -38,5 +38,5 @@ io.sockets.on('connection', function(socket){
 	});
 });
 
-server.listen(4200);
-
+server.listen(6969);
+console.log('running server');

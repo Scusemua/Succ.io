@@ -2,7 +2,6 @@
 <html>
 	<head>
 		<title>Succ.IO - The Game</title>
-
 	</head>
 	
     <!-- Ensure that everything scales appropriately on a mobile device -->
@@ -13,7 +12,7 @@
 	<body>	
 <!--[if lt IE 7]>
 <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-<![endif]-->
+<![endif]--> 
 		<div class="container" id="main-banner">
 			<p>Succ.io</p>
 		</div>  
@@ -28,72 +27,68 @@
 		</div>	
 
 		<script id="nickname-template" type="text/template">
-			<div class="info-prompt">
-				<div> 
-					<h4>Please enter a nickname.</h4>
-					<input id="inputPlayerName" type="text" class="form-control" placeholder="Enter name here." autocomplete="off"/> 	
+			<div class="panel panel-default info-prompt"> 
+				<div class="panel-heading" style="color: #212121;">Please enter a nickname.</div>
+				<div class="panel-body">
+					<input id="inputPlayerName" type="text" class="form-control" placeholder="Enter name here." autocomplete="off" style="margin-top: 1.5em;"/> 	
 					<span class="input-group-btn">
-						<input id="btnConfirmNickname" class="semi-transparent-button" type="submit" value="Confirm"/>
+						<input id="btnConfirmNickname" class="semi-transparent-button" type="submit" value="Confirm" style="margin-top: 1em;"/>
 					</span>				
 				</div>
-			</div>		
+			</div>	
 		</script>
 		
 		<script id="join-create-template" type="text/template">
-			<div class="info-prompt">
-				<div class>
-					<h3>Join Game or Create Game?</h3>
-					<input id="btnJoin" class="semi-transparent-button stacked-button" type="submit" value="Join" style="margin-top: 15px;"/>
-					<input id="btnCreate" class="semi-transparent-button stacked-button" type="submit" value="Create" style="margin-top: 15px;"/>
+			<div class="panel panel-default info-prompt">
+				<div class="panel-heading" style="color: #212121;">Join Game or Create Game?</div>
+				<div class="panel-body">
+					<input id="btnJoin" class="semi-transparent-button stacked-button" type="submit" value="Join" style="margin-top: 1em;"/>
+					<input id="btnCreate" class="semi-transparent-button stacked-button" type="submit" value="Create" style="margin-top: 1em;"/>
 				</div>
 			</div>
 		</script>
 		
 		<script id="join-game-template" type="text/template">
-			<div class="info-prompt">
-				<div class>
-					<h4>Please enter a numerical ID.</h4>
-					<input id="inputGameId" type="number" class="form-control" placeholder="Enter ID here." autocomplete="off"/>  
-					<span class="input-group-btn" >
-						<input id="btnConfirmGameId" class="semi-transparent-button" type="submit" value="Join Game"/>
-					</span>								
+			<div class="panel panel-default info-prompt">
+				<div class="panel-heading" style="color: #212121;">Please enter a numerical ID.</div>	
+				<div class="panel-body">
+					<input id="inputGameId" type="number" class="form-control" placeholder="Enter ID here." autocomplete="off" style="margin-top: 1.5em;"/>  
+					<span class="input-group-btn">
+						<input id="btnConfirmGameId" class="semi-transparent-button" type="submit" value="Join Game" style="margin-top: 1em;"/>
+					</span>	
 				</div>
 			</div>
 		</script>	
 		
 		<script id="lobby-template" type="text/template">
             <div id="gameCode">Error!</div>
-			<div>
-				<table class=".table-striped" width="100%" style="margin: 0px; padding: 0px;">
-					<tr>
-						<th colspan="1">Chat</th>
-						<th>Players Waiting</th>
-					</tr>
-					<tr>
-						<td style="width: 70%;">
-							<div>
-								<div id="chat-window">
-									<nav>
-										<ul id="messages"></ul>
-									</nav>
-								</div>					
+				<div class="col-lg-9 col-md-9 col-sm-9">
+					<div class="panel panel-default>
+						<div id="chat-panel-heading" class="panel-heading">Chat</div>
+						<div class="panel-body">
+							<div id="chat-window">
+								<nav>
+									<ul id="messages"></ul>
+								</nav>
+							</div>	
+							<form id="message-box-form" onSubmit="return false;">
+								<input id="message-box" autocomplete="off"/> <input id="btn-send-message" type="submit" class="semi-transparent-button" value="Send"/>
+							</form>					
+						</div>
+					</div>			
+				</div>		
+				<div class="col-lg-3 col-md-3 col-sm-3">
+					<div class="panel panel-default>
+						<div id="players-waiting-panel" class="panel-heading">Players Waiting</div>
+						<div class="panel-body">
+							<div id="players-waiting">
+								<nav>
+									<ul id="players-waiting-list"></ul>																
+								</nav>
 							</div>						
-						</td>
-						<td style="width: 30%;">
-							<div>						
-								<div id="players-waiting">
-									<nav>
-										<ul id="players-waiting-list"></ul>																
-									</nav>
-								</div>									
-							</div>
-						</td>
-					</tr>
-				</table>
-				<form id="message-box-form" onSubmit="return false;">
-					<input id="message-box" autocomplete="off"/> <input id="btn-send-message" type="submit" class="semi-transparent-button" value="Send"/>
-				</form>
-			</div>
+						</div>
+					</div>	
+				</div>
 		</script>
 		
 		<script id="game-template" type="text/template">

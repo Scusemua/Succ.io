@@ -175,7 +175,9 @@ jQuery(function($) {
 		
 		// Displays the Join Game / Create Game template.
 		displayJoinCreateMenu: function() {
-			App.$gameArea.html(App.$templateJoinCreate);
+			// Animate transition.
+			App.$gameArea.html(App.$templateJoinCreate).hide();
+			App.$gameArea.fadeIn('slow');
 		},
 		
         /**
@@ -183,7 +185,9 @@ jQuery(function($) {
          * (with Start and Join buttons)
          */
         showInitScreen: function() {
-            App.$gameArea.html(App.$templateNickname);
+			// Animate the transition.
+            App.$gameArea.html(App.$templateNickname).hide();
+			App.$gameArea.fadeIn('slow');
         },		
 		
 		 
@@ -205,7 +209,9 @@ jQuery(function($) {
 		
 		// Display the actual game UI (not waiting room or otherwise).
 		updateGameScreen: function() {
-			App.$gameArea.html(App.$templateGame);
+			// Animate the transition.
+			App.$gameArea.html(App.$templateGame).hide();
+			App.$gameArea.fadeIn('slow');
 		},
 		
 		// Returns true if the given string consists of at least one character that isn't a space.
@@ -268,7 +274,8 @@ jQuery(function($) {
 			// Show the Host screen containing the game URL and
 			// the unique game ID.
 			displayNewGameScreen: function() {
-				// Fill the game area with the appropriate HTMl
+				// Fill the game area with the appropriate HTML.
+				// We call .hide() and then .fadeIn() to animate the transition.
 				App.$gameArea.html(App.$templateLobby);
 				App.$hostStartBtnArea.html(App.$templateHostStartBtn);
 
@@ -284,8 +291,7 @@ jQuery(function($) {
 			updateWaitingScreen: function(data) {
 				console.log(data);
 				var elementId = "listElement_" + data.playerId;
-				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();			
-				// $('#players-waiting-list').append($('<li>').text(data.playerName));
+				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
 			},			
 			
 			onStartClick: function() {
@@ -301,7 +307,7 @@ jQuery(function($) {
 					IO.socket.emit('countdown', data);
 					App.counter--;
 					// Display 'counter' wherever you want to display it.
-					if (App.counter == 0) {
+					if (App.counter <= 0) {
 						// Tell the server that the game is starting.
 						IO.socket.emit('game-starting', App.gameId);
 						clearInterval(intervalId);
@@ -327,7 +333,9 @@ jQuery(function($) {
 			
 			// Click handler for the 'JOIN GAME' button.
 			onJoinClick: function() {
-				App.$gameArea.html(App.$templateJoinGame);
+				// We call .hide() and then .fadeIn() to animate the transition to the new UI.
+				App.$gameArea.html(App.$templateJoinGame).hide();
+				App.$gameArea.fadeIn('slow');
 			},
 			 
 			// Handler for when the Player entered their name and gameID
@@ -383,7 +391,8 @@ jQuery(function($) {
 			// Display the new game screen. This screen won't have a "start" button since this is the player and not the host.
 			displayNewGameScreen: function(data) {
 				// Fill the game area with the appropriate HTMl
-				App.$gameArea.html(App.$templateLobby);
+				App.$gameArea.html(App.$templateLobby).hide();
+				App.$gameArea.fadeIn('slow');
 
 				// Show the gameID / room ID on the screen.
 				$('#gameCode').text('Room #: ' + App.gameId);

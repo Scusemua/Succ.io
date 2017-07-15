@@ -1,5 +1,5 @@
-body{
-	background-color: #ddd;
+body {
+	background-color: #A5A5A5;
 	font-family: Helvetica Neue, Arial;
 }
 
@@ -31,25 +31,19 @@ body{
 }
 
 .container {
-	background-color: #FF2D2D; /* Red */
+	background-color: #0038BC; /* Blue */ 
 	color: white;
 }
 
 .info-prompt {
 	text-align: center;
-	top: 40%;
+	top: 50%;
 	left: 50%;
 	height: 230px;
 	width: 350px;
+	margin: 0 auto;
 	position: absolute;
-    top: 0;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	margin: auto;
-	background-color: #eee;
-	z-index: 2;
-	padding: 10px;
+	transform: translateX(-50%) translateY(-50%);	
 }
 
 #gameArea {
@@ -69,7 +63,7 @@ body{
   box-sizing: border-box;
   width: 80%;
   max-width: 200px;
-  background: #FF4747; 
+  background: #00A152; 
   border-radius: 8px;
   color: #fff;
   text-align: center;
@@ -81,7 +75,7 @@ body{
 .semi-transparent-button:hover,
 .semi-transparent-button:focus,
 .semi-transparent-button:active {
-  background: #FF7C7C;
+  background: #58C998;
   color: #000;
   transition: all 0.5s ease-in;
 }
@@ -129,21 +123,15 @@ th {
 	min-width: 70px;
 }
 
-#players-waiting-list {
-	list-style-type: none; 
-	margin: 0; 
-	padding: 0;
-}
-
-#players-waiting-list li:nth-child(odd) { background: #FFC6C6; }
-#players-waiting-list li:nth-child(even) { background: #FFD9D9; }
+#players-waiting-list li:nth-child(odd) { background: #9FE0FF; }
+#players-waiting-list li:nth-child(even) { background: #BFEAFF; }
 
 #messages { list-style-type: none; margin: 0; padding: 0; }
 #messages li { padding: 5px 10px; }
 #messages li:nth-child(odd) { background: #eee; }
 
 #message-box-form {
-	background: #FFECEC; 
+	background: #D9FCFF; 
 	padding: 3px; 
 	bottom: 0;
 }
@@ -152,5 +140,6 @@ th {
 	border: 0; 
 	padding: 10px; 
 	width: 50%; 
+	height: 3em;
 	margin-right: .5%;
 }

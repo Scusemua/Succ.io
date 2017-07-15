@@ -46,7 +46,7 @@ function gameStarting(gameId) {
 	console.log('Game ' + gameId + ' Started.');
 	var sock = this;
 	// Tell all of the players that the game has started.
-	sock.broadcast.to(gameId).emit('game-started', data);
+	sock.broadcast.to(gameId).emit('game-started', gameId);
 };
 
 ///
