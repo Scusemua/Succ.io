@@ -78,11 +78,11 @@ jQuery(function($) {
 	 
 		/**
 		 * A player has successfully joined the game.
-		 * @param data {{playerName: string, gameId: iint, mySocketId: int}}
+		 * @param data {{playerName: string, gameId: int, mySocketId: int}}
 		 */
 		playerJoinedRoom : function(data) {
 			// When a player joins the lobby, do the updateWaitingScreen function.
-			App.updateWaitingScreen(data);
+			App.Host.updateWaitingScreen(data);
 		},
 		
 		// Update the game screen such that the UI for the actual game is shown.
@@ -203,11 +203,6 @@ jQuery(function($) {
 			);
 		},
 		
-		// Add a player's name to the list of waiting players.
-		updateWaitingScreen: function(data) {
-			$('#players-waiting-list').append($('<li>').text(data.playerName));
-		},
-		
 		// Display the actual game UI (not waiting room or otherwise).
 		updateGameScreen: function() {
 			App.$gameArea.html(App.$templateGame);
@@ -229,9 +224,8 @@ jQuery(function($) {
 		// The data passed to the function is the socket id of the disconnected client. This
 		// is used to remove that list element from the players waiting list.
 		playerDisconnected: function(data) {
-			console.log("Player disconnected.");
-			var elementId = "listElement_" + data;
-			$('#' + elementId).parent().remove();
+			console.log('#listElement_' + data);
+			$('#listElement_' + data).hide('slow', function(){ $('#listElement_' + data).remove(); });
 		},
 		 
 		///
@@ -258,7 +252,6 @@ jQuery(function($) {
 			// Handler for the 'Start' button on the title screen.
 			onCreateClick: function () {
 				IO.socket.emit('hostCreateNewGame', App.Player.myName);
-				console.log('Create game clicked.');
 			},
 
 			// Host screen is displayed for the first time.
@@ -286,6 +279,14 @@ jQuery(function($) {
 				var elementId = "listElement_" + App.mySocketId;
 				$('<li id=' + elementId + '>' + App.Player.myName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
 			},
+			
+			// Add a player's name to the list of waiting players.
+			updateWaitingScreen: function(data) {
+				console.log(data);
+				var elementId = "listElement_" + data.playerId;
+				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();			
+				// $('#players-waiting-list').append($('<li>').text(data.playerName));
+			},			
 			
 			onStartClick: function() {
 				// Tell the server that the host clicked start.
@@ -371,6 +372,7 @@ jQuery(function($) {
                 // Collect data to send to the server.
                 var data = {
                     gameId : +($('#inputGameId').val()),
+					playerId: App.mySocketId,
                     playerName : App.Player.myName
                 };				
 				
