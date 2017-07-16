@@ -27,9 +27,9 @@
 			
 			</div>
 			
-			<footer>
+			<!-- <div id="footer">
 				<h5>© Benjamin Carver 2017</h5>
-			</footer>				
+			</div> -->	
 		</div>
 
 		<script id="nickname-template" type="text/template">
@@ -87,7 +87,7 @@
 										<ul id="messages"></ul>
 									</nav>
 								</div>	
-								<form id="message-box-form" onSubmit="return false;">
+								<form id="message-box-form">
 									<input id="message-box" class="form-control" type="text" autocomplete="off" placeholder="Type chat message here."/>
 								</form>					
 							</div>
@@ -101,7 +101,7 @@
 							<div class="panel-body">
 								<div id="players-waiting-container">
 									<nav>
-										<ul id="players-waiting-list"></ul>																
+										<ul id="players-waiting-list" class="players-waiting-list"></ul>																
 									</nav>
 								</div>						
 							</div>
@@ -112,8 +112,39 @@
 		</script>
 		
 		<script id="game-template" type="text/template">
-			<div class="row equal">
-				
+			<div class="container-fluid" style="margin-top: 1em;">
+				<div class="row">
+					<div class="col-lg-9 col-md-9 col-sm-6">
+						<div class="panel panel-primary">
+							<div id="chat-panel-heading" class="panel-heading">
+								<h3 class="panel-title">Question</h3>
+							</div>
+							<div class="panel-body">
+								<div id="question">
+									<h2>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus aliquet lacus dui, vel venenatis leo iaculis a. Nulla eleifend dolor vitae nibh fermentum aliquet.</h2>
+								</div>
+								<form id="response-form">
+									<label for="response">Response:</label>
+									<input type="text" class="form-control" id="response" placeholder="Type your response here." autocomplete="off">								
+								</form>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-3 col-md-3 col-sm-6">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3 class="panel-title">Players</h3>
+							</div>
+							<div class="panel-body">
+								<div>
+									<nav>
+										<ul id="players-waiting-list-ingame" class="players-waiting-list"></ul>	
+									</nav>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</script>
 		

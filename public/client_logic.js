@@ -31,21 +31,11 @@ jQuery(function($) {
 			IO.socket.on('beginNewGame', IO.beginNewGame);
 			IO.socket.on('gameOver', IO.gameOver);
 			IO.socket.on('error-occurred', IO.error);
-			IO.socket.on('game-started', IO.updateGameScreen);
+			IO.socket.on('game-started', IO.showGameScreen);
 			IO.socket.on('chat message', function(msg) {
 				$('#messages').append($('<li>').text(msg));
-			});			
-			/*$(document).on('click', '#btn-send-message', function() {
-				// Grab the text and verify that it isn't empty or just spaces.
-				var msg = $('#message-box').val();
-				var valid = App.verifyText(msg);
-				if (!valid) return null;
-				// Append the player's name to the message.
-				msg = App.Player.myName + ': ' +  msg;
-				IO.socket.emit('chat message', msg);
-				$('#message-box').val('');
-				return false;
-			});*/
+			});
+			/* When the player hits 'enter' while typing in the chat box */
 			$(document).on('submit', '#message-box-form', function() {
 				// Grab the text and verify that it isn't empty or just spaces.
 				var msg = $('#message-box').val();
@@ -56,7 +46,28 @@ jQuery(function($) {
 				IO.socket.emit('chat message', msg);
 				$('#message-box').val('');
 				return false;
-			});				
+			});		
+			/* When the player hits 'enter' while typing in the response box */
+			$(document).on('submit', '#response-form', function() {
+				// If they've already responded, do nothing.
+				if (App.responded) return false;
+				// Grab the text and verify that it isn't empty or just spaces.
+				var response = $('#response').val();
+				var valid = App.verifyText(response);
+				if (!valid) return null;
+				// Append the player's name to the message.
+				response = response;
+				var data = {
+					response: response,
+					playerId: App.mySocketId
+				}
+				IO.socket.emit('response', data);
+				$('#response').val('');
+				App.responded = true;
+				$('#response').prop('disabled', true);
+				$('#response').prop('placeholder', "Your response has been submitted.");
+				return false;
+			});		
 		},
 	
 		/**
@@ -86,10 +97,11 @@ jQuery(function($) {
 		},
 		
 		// Update the game screen such that the UI for the actual game is shown.
-		updateGameScreen: function() {
-			App.updateGameScreen();
+		showGameScreen: function(data) {
+			App.gameStarted = true;
+			App.showGameScreen(data);
 		},
-	  
+		
 		/**
 		* An error has occurred.
 		* @param data
@@ -122,6 +134,14 @@ jQuery(function($) {
 		 */
 		counter: 5,	
 		
+		/* Flag which indicates whether a player has already responded to the current question. 
+		 * When this is true, they cannot type more answers into the prompt, and any new answers
+		 * will not actually be submitted should they circumvent the disabled input text box.
+		 */
+		responded: false,
+		
+		/* Flag which indicates whether or not the game has started */
+		gameStarted: false,
 		//
 		//
 		//
@@ -208,10 +228,16 @@ jQuery(function($) {
 		},
 		
 		// Display the actual game UI (not waiting room or otherwise).
-		updateGameScreen: function() {
+		showGameScreen: function(data) {
 			// Animate the transition.
 			App.$gameArea.html(App.$templateGame).hide();
 			App.$gameArea.fadeIn();
+			
+			// Populate the list of players.
+			for (var i = 0; i < data.memberNames.length; i++) {
+				var elementId = "listElement_" + data.memberSockets[i];
+				$('<li id=' + elementId + '>' + data.memberNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
+			}				
 		},
 		
 		// Returns true if the given string consists of at least one character that isn't a space.
@@ -230,7 +256,6 @@ jQuery(function($) {
 		// The data passed to the function is the socket id of the disconnected client. This
 		// is used to remove that list element from the players waiting list.
 		playerDisconnected: function(data) {
-			console.log('#listElement_' + data);
 			$('#listElement_' + data).hide('slow', function(){ $('#listElement_' + data).remove(); });
 		},
 		 
@@ -289,7 +314,6 @@ jQuery(function($) {
 			
 			// Add a player's name to the list of waiting players.
 			updateWaitingScreen: function(data) {
-				console.log(data);
 				var elementId = "listElement_" + data.playerId;
 				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
 			},			
@@ -307,9 +331,11 @@ jQuery(function($) {
 					IO.socket.emit('countdown', data);
 					App.counter--;
 					// Display 'counter' wherever you want to display it.
-					if (App.counter <= 0) {
+					if (App.counter < 0) {
 						// Tell the server that the game is starting.
 						IO.socket.emit('game-starting', App.gameId);
+						App.$hostStartBtnArea.hide();
+						$('#gameCode').hide();
 						clearInterval(intervalId);
 					}
 				}, 1000)

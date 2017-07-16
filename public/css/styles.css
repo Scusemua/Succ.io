@@ -72,14 +72,14 @@ nav ul{overflow:hidden; overflow-y:scroll;}
 }
 
 /* The <ul> itself for the players waiting list */
-#players-waiting-list { 
+.players-waiting-list { 
 	list-style-type: none;
 	margin: 0; 
 	padding: 0; 
 }
 
 /* A single list element of the <ul> players waiting list */ 
-#players-waiting-list li { 
+.players-waiting-list li { 
 	padding: 5px 10px;  
 } 
 
@@ -93,7 +93,7 @@ nav ul{overflow:hidden; overflow-y:scroll;}
 }
 
 /* Reference to the <ul> itself (specifically the odd numbered <li> within the <ul>) */
-#players-waiting-list li:nth-child(odd) { background: #eee; }
+.players-waiting-list li:nth-child(odd) { background: #eee; }
 
 #messages { list-style-type: none; margin: 0; padding: 0; }
 #messages li { 
@@ -111,9 +111,14 @@ nav ul{overflow:hidden; overflow-y:scroll;}
 	margin-right: .5%;
 }
 
-footer {
+#footer {
 	position: fixed;
     bottom: 0;
     width: 100%;
 	text-align: center;
+	display:block;
+}
+
+#question {
+	
 }

@@ -1,5 +1,9 @@
 var io;
 var gameSocket;
+// Maps a player's socketId to their response for this round.
+var roundResponses = new Map();
+// Map which maps socket id's to points.
+var points = new Map(); 
 
 // Function called to initialize a new game instance.
 // @param sio The Socket.IO library
@@ -12,6 +16,7 @@ exports.initGame = function(sio, socket) {
 	// Host Events
 	gameSocket.on('hostCreateNewGame', hostCreateNewGame);
 	gameSocket.on('game-starting', gameStarting);
+	gameSocket.on('response', onResponse);
 	
 	// Player Events
 	gameSocket.on('playerJoinGame', playerJoinGame);
@@ -45,8 +50,31 @@ function hostCreateNewGame(name) {
 function gameStarting(gameId) {
 	console.log('Game ' + gameId + ' Started.');
 	var sock = this;
+	var room = gameSocket.adapter.rooms[gameId];
+	
+	var memberNames = [];
+	var memberSockets = [];
+	var clients = room.sockets;
+	for (var clientId in clients) {
+		memberSockets.push(clientId);
+		memberNames.push(io.sockets.connected[clientId].nickname);
+	}
+	
+	// Data that isn't to go to all the other clients	
+	var personalData = {
+		memberNames: memberNames,
+		memberSockets: memberSockets,
+		gameId: gameId
+	}
+	
 	// Tell all of the players that the game has started.
-	sock.broadcast.to(gameId).emit('game-started', gameId);
+	io.in(gameId).emit('game-started', personalData);
+};
+
+/* When a player enters and submits a response to a question, an event is fired and this method is executed by the host (server-side). */
+function onResponse(data) {
+	// console.log('Client ' + data.playerId + ' responded with: ' + data.response);
+	roundResponses.set(data.playerId, data.response);
 };
 
 ///
@@ -92,6 +120,7 @@ function playerJoinGame(data) {
 			gameId: data.gameId
 		}
 		
+		// Note that thsis only emits to the client of the sender.
 		sock.emit('youJoinedRoom', personalData);
 		
 		console.log('Player ' + data.playerName + ' successfully joining game: ' + data.gameId );
@@ -107,5 +136,4 @@ function playerJoinGame(data) {
 function playerConfirmName(name) {
 	var sock = this;
 	sock.nickname = name;
-	console.log(sock.id + " , " + sock.nickname);
 };
