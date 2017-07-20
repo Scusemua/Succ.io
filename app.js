@@ -17,6 +17,7 @@ var game = require('./game.js');
 // Serve static html, js, css, and image files from the 'public' directory
 app.use(express.static(path.join(__dirname + '/public')));
 
+// Listen for events on the server. 
 io.sockets.on('connection', function(socket){
 	var address = socket.request.connection.remoteAddress;
 	console.log('A Client has connected from ' + address);

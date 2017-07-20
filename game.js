@@ -1,9 +1,5 @@
 var io;
 var gameSocket;
-// Maps a player's socketId to their response for this round.
-var roundResponses = new Map();
-// Map which maps socket id's to points.
-var points = new Map(); 
 
 // Function called to initialize a new game instance.
 // @param sio The Socket.IO library
@@ -16,7 +12,10 @@ exports.initGame = function(sio, socket) {
 	// Host Events
 	gameSocket.on('hostCreateNewGame', hostCreateNewGame);
 	gameSocket.on('game-starting', gameStarting);
-	gameSocket.on('response', onResponse);
+	gameSocket.on('response', function(data) {
+		console.log('response...' + data.response);
+		io.in(data.gameId).emit('response', data);
+	});
 	
 	// Player Events
 	gameSocket.on('playerJoinGame', playerJoinGame);
@@ -47,6 +46,7 @@ function hostCreateNewGame(name) {
 	this.join(thisGameId.toString());
 };
 
+// Executes when the game begins. Alerts clients that game is starting and sends data to clients with information about the room.
 function gameStarting(gameId) {
 	console.log('Game ' + gameId + ' Started.');
 	var sock = this;
@@ -55,6 +55,7 @@ function gameStarting(gameId) {
 	var memberNames = [];
 	var memberSockets = [];
 	var clients = room.sockets;
+	console.log(clients);
 	for (var clientId in clients) {
 		memberSockets.push(clientId);
 		memberNames.push(io.sockets.connected[clientId].nickname);
@@ -69,12 +70,6 @@ function gameStarting(gameId) {
 	
 	// Tell all of the players that the game has started.
 	io.in(gameId).emit('game-started', personalData);
-};
-
-/* When a player enters and submits a response to a question, an event is fired and this method is executed by the host (server-side). */
-function onResponse(data) {
-	// console.log('Client ' + data.playerId + ' responded with: ' + data.response);
-	roundResponses.set(data.playerId, data.response);
 };
 
 ///

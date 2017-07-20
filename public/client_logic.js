@@ -32,6 +32,7 @@ jQuery(function($) {
 			IO.socket.on('gameOver', IO.gameOver);
 			IO.socket.on('error-occurred', IO.error);
 			IO.socket.on('game-started', IO.showGameScreen);
+			IO.socket.on('response', IO.onResponse)
 			IO.socket.on('chat message', function(msg) {
 				$('#messages').append($('<li>').text(msg));
 			});
@@ -59,7 +60,8 @@ jQuery(function($) {
 				response = response;
 				var data = {
 					response: response,
-					playerId: App.mySocketId
+					playerId: App.mySocketId,
+					gameId: App.gameId
 				}
 				IO.socket.emit('response', data);
 				$('#response').val('');
@@ -76,7 +78,7 @@ jQuery(function($) {
 		onConnected : function() {
 			// Cache a copy of the client's socket.IO session ID on the App.
 			App.mySocketId = IO.socket.io.engine.id;
-			console.log("SessionID: " + App.mySocketId);
+			console.log('SessionID: ' + App.mySocketId);
 		},
 	
 		/** 
@@ -85,15 +87,6 @@ jQuery(function($) {
 		 */
 		onNewGameCreated : function(data) {
 			App.Host.gameInit(data);
-		},
-	 
-		/**
-		 * A player has successfully joined the game.
-		 * @param data {{playerName: string, gameId: int, mySocketId: int}}
-		 */
-		playerJoinedRoom : function(data) {
-			// When a player joins the lobby, do the updateWaitingScreen function.
-			App.Host.updateWaitingScreen(data);
 		},
 		
 		// Update the game screen such that the UI for the actual game is shown.
@@ -108,7 +101,15 @@ jQuery(function($) {
 		*/
 		error : function(data) {
 			alert(data.message);
-		}		
+		},
+
+		playerJoinedRoom: function(data) {
+			App[App.myRole].playerJoinedRoom(data);
+		},
+		
+		onResponse: function(data) {
+			App[App.myRole].onResponse(data);
+		}
 	};
 	
 	var App = {
@@ -190,7 +191,10 @@ jQuery(function($) {
 			App.$doc.on('click', '#btnCreate', App.Host.onCreateClick);
 			App.$doc.on('click', '#btnConfirmNickname', App.Player.onPlayerConfirmNicknameClick);
 			App.$doc.on('click', '#btnConfirmGameId', App.Player.onJoinGameConfirmClick);
-			App.$doc.on('click', '#btnHostStartGame', App.Host.onStartClick);
+			App.$doc.on('click', '#btnHostStartGame', function() {
+				 $(this).prop("disabled",true);
+				 App.Host.onStartClick();
+			});
 		}, 
 		
 		// Displays the Join Game / Create Game template.
@@ -258,6 +262,14 @@ jQuery(function($) {
 		playerDisconnected: function(data) {
 			$('#listElement_' + data).hide('slow', function(){ $('#listElement_' + data).remove(); });
 		},
+		
+		/**
+		 * A player has successfully joined the game.
+		 * @param data {{playerName: string, gameId: int, mySocketId: int}}
+		 */
+		playerJoinedRoom : function(data) {
+			// Do nothing...
+		},
 		 
 		///
 		///
@@ -272,6 +284,12 @@ jQuery(function($) {
 			// References to the player data.
 			players: [],
 
+			roundResponses: new Map(),
+			
+			points: new Map(),
+			
+			gameStarting: false,
+			
 			// Flag to indicate if a new game is starting.
 			// Used when game ends and players start new game
 			// without refreshing the browser windows.
@@ -291,7 +309,7 @@ jQuery(function($) {
 				App.gameId = data.gameId;
 				App.mySocketId = data.mySocketId;
 				App.myRole = 'Host';
-				App.Host.numPlayersInRoom = 0;
+				App.Host.numPlayersInRoom = 1;
 
 				App.Host.displayNewGameScreen();
 			},
@@ -319,6 +337,10 @@ jQuery(function($) {
 			},			
 			
 			onStartClick: function() {
+				if (App.gameStarting) {
+					return false;
+				}
+				App.gameStarting = true;
 				// Tell the server that the host clicked start.
 				// App.$gameArea.html(App.$templateActualGame);
 				var intervalId;
@@ -336,10 +358,35 @@ jQuery(function($) {
 						IO.socket.emit('game-starting', App.gameId);
 						App.$hostStartBtnArea.hide();
 						$('#gameCode').hide();
+						App.Host.numPlayersInRoom++;
 						clearInterval(intervalId);
 					}
 				}, 1000)
-			}
+			},
+			
+			/* When a player enters and submits a response to a question, an event is fired and this method is executed by the host (server-side). */
+			onResponse: function(data) {
+				// console.log('Client ' + data.playerId + ' responded with: ' + data.response);
+				App.Host.roundResponses.set(data.playerId, data.response);
+				
+				console.log('Response from ' + data.playerId + ': ' + data.response);
+				
+				// Everybody has submitted a response. 
+				if (App.Host.roundResponses.size == App.Host.numPlayersInRoom) {
+					console.log('all responses received!');
+				}
+			},
+
+			/**
+			 * A player has successfully joined the game.
+			 * @param data {{playerName: string, gameId: int, mySocketId: int}}
+			 */
+			playerJoinedRoom : function(data) {
+				// When a player joins the lobby, do the updateWaitingScreen function.
+				App.Host.updateWaitingScreen(data);
+				App.Host.numPlayersInRoom++;
+				console.log(App.Host.numPlayersInRoom);
+			}		
 		},
 		 
 		 ///
@@ -360,6 +407,7 @@ jQuery(function($) {
 			// Click handler for the 'JOIN GAME' button.
 			onJoinClick: function() {
 				// We call .hide() and then .fadeIn() to animate the transition to the new UI.
+				App.myRole = 'Player';
 				App.$gameArea.html(App.$templateJoinGame).hide();
 				App.$gameArea.fadeIn();
 			},
@@ -383,7 +431,6 @@ jQuery(function($) {
 				}
 				
 				// Set the appropriate properties for the current player.
-				// App.myRole = 'Player';
 				App.Player.myName = playerName;	
 				// IO.socket.nickname = playerName;
 				IO.socket.emit('playerConfirmName', playerName);
@@ -434,13 +481,14 @@ jQuery(function($) {
 			
 			// Fired when this client successfully joins a room.
 			youJoinedRoom: function(data) {
-				// Set the appropriate properties for the current player.
-				App.myRole = 'Player';		
-
 				App.gameId = data.gameId;
 				
 				App.Player.displayNewGameScreen(data);			
-			}			
+			},
+
+			onResponse: function(data) {
+				// do nothing...
+			}
 		},
 	};
 	IO.init();
