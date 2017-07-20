@@ -26,7 +26,7 @@ io.sockets.on('connection', function(socket){
 	// so that, if that player was in their room, they can be
 	// removed from lists and whatnot.
 	socket.on('disconnect', function() {
-		console.log("A Client has disconnected.");
+		console.log('A Client has disconnected.');
 		io.emit('player-disconnected', socket.id);
 	});
 	socket.on('chat message', function(msg) {
