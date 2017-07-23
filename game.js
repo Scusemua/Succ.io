@@ -7,19 +7,18 @@ var gameSocket;
 exports.initGame = function(sio, socket) {
 	io = sio;
 	gameSocket = socket;
-	gameSocket.emit('connected', { message: "You are connected!"});
+	gameSocket.emit('connected', { message: "You are connected!"});	// Emtis event to client notiftying client that they successfully connected.
 	
 	// Host Events
-	gameSocket.on('hostCreateNewGame', hostCreateNewGame);
-	gameSocket.on('game-starting', gameStarting);
-	gameSocket.on('response', function(data) {
-		console.log('response...' + data.response);
+	gameSocket.on('hostCreateNewGame', hostCreateNewGame);		// Fires when a client creates a nwe game.
+	gameSocket.on('game-starting', gameStarting);				// Fires when the game is beginning (host pressed Start).
+	gameSocket.on('response', function(data) {					// Fires when a player sends a response to the server from the actual game.
 		io.in(data.gameId).emit('response', data);
 	});
 	
 	// Player Events
-	gameSocket.on('playerJoinGame', playerJoinGame);
-	gameSocket.on('playerConfirmedName', playerConfirmName);
+	gameSocket.on('playerJoinGame', playerJoinGame);			// Fires when a player joins the game room.
+	gameSocket.on('playerConfirmedName', playerConfirmName);	// Fires when a player confirms their nickname so we can add the nickname to the socket.
 	// gameSocket.on('playerAnswer', playerAnswer);
 	// gameSocket.on('playerRestart', playerRestart);
 }
