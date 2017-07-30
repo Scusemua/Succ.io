@@ -16,6 +16,7 @@ exports.initGame = function(sio, socket) {
 		io.in(data.gameId).emit('response', data);
 	});
 	gameSocket.on('voting-begins', votingBegins);
+	gameSocket.on('vote-casted', voteCasted);
 	
 	// Player Events
 	gameSocket.on('playerJoinGame', playerJoinGame);			// Fires when a player joins the game room.
@@ -78,6 +79,12 @@ function gameStarting(gameId) {
 // back to the server and then host client properly.
 function votingBegins(data) {
 	io.in(data.gameId).emit('voting-begins', data);
+}
+
+// This event is triggered when a client votes for a response during the voting stage of the game. This method will emit an event
+// to the clients, telling the host to increase the point tally for the appropriate response based on the vote field of the data parameter.
+function voteCasted(data) {
+	io.in(data.gameId).emit('vote-casted', data);
 }
 
 ///

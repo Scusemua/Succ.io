@@ -37,6 +37,7 @@ jQuery(function($) {
 			IO.socket.on('chat message', function(msg) {					// Fires when a player sends a chat message (from the pre-game lobby).
 				$('#messages').append($('<li>').text(msg));
 			});
+			IO.socket.on('vote-casted', IO.voteCasted);
 			/* When the player hits 'enter' while typing in the chat box */
 			$(document).on('submit', '#message-box-form', function() {
 				// Grab the text and verify that it isn't empty or just spaces.
@@ -124,6 +125,13 @@ jQuery(function($) {
 		// Executes when the voting phase of the game/round begins.
 		votingBegins: function(data) {
 			App.votingBegins(data);
+		},
+		
+		// Executes when the server notifies the clients of a vote-casted.
+		// This will only trigger a method on the host client.
+		voteCasted: function(data) {
+			console.log('test');
+			App[App.myRole].voteCasted(data);
 		}
 	};
 	
@@ -158,6 +166,11 @@ jQuery(function($) {
 		
 		/* Flag which indicates whether or not the game has started */
 		gameStarted: false,
+		
+		// This represents the selected response within the voting list.
+		// It is stored as the clientID associated with that response. 
+		// It is updated by selecting different options from the list.
+		selectedId: '',
 		
 		//
 		//
@@ -230,6 +243,15 @@ jQuery(function($) {
 				 $(this).prop("disabled",true);
 				 App.Host.onStartClick();
 			});
+			// Button which sends to the server this client's vote for the best answer. Disables the vote button once vote is submitted.
+			App.$doc.on('click', '#btnConfirmVote', function(e) {
+				$(this).prop("disabled",true);
+				var data = {
+					gameId: App.gameID,
+					vote: App.selectedId
+				};
+				IO.socket.emit('vote-casted', data);
+			});		
 		}, 
 		
 		// Displays the Join Game / Create Game template.
@@ -304,14 +326,20 @@ jQuery(function($) {
 			// the two interfaces (which are kept within their own templates) depending on if we are in a question/respone or voting phase of the game.				
 			$('#panel-content').html(App.$templateVoteGame);
 			var list = $('#response-list');
-			for (var i = 0; i < data.keys.length; i++) {
-				console.log('key: ' + data.keys[i]);
-				console.log('values: ' + data.values[i]);
-			}
 			
+			// for (var i = 0; i < data.keys.length; i++) {
+			// console.log('key: ' + data.keys[i]);
+			// console.log('values: ' + data.values[i]);
+			// }
+			
+			// Load all of the respones into the list.
 			for (var i = 0; i < data.keys.length; i++) {
-				$('<a href="#" id="e_' + data.keys[i] + '" + class="list-group-item">' + data.values[i] + '</a>').appendTo(list).hide().slideDown();
-			}
+				// $('<a href="#" id="e_' + data.keys[i] + '" + class="list-group-item">' + data.values[i] + '</a>').appendTo(list).hide().slideDown();
+				$('<button type="button" id="e_' + data.keys[i] + '" + class="list-group-item">' + data.values[i] + '</button>').appendTo(list).hide().slideDown();
+				$('#e_' + data.keys[i]).on('click', function() {
+					App.selectedId = $(this).attr('id').substring(3);
+				});	
+			}			
 		},			
 		 
 		///
@@ -330,6 +358,8 @@ jQuery(function($) {
 			roundResponses: {},
 			
 			points: {},
+			
+			numVotes: 0,
 			
 			gameStarting: false,
 			
@@ -427,7 +457,25 @@ jQuery(function($) {
 				var elementId = "listElement_" + data.playerId;
 				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
 				App.Host.numPlayersInRoom++;
-			}			
+			},
+
+			voteCasted: function(data) {
+				console.log('test');
+				if (App.Host.points[data.vote] != null) 
+				{
+					App.Host.points[data.vote]++;
+				} 
+				else 
+				{
+					App.Host.points[data.vote] = 1;
+				}
+				numVotes++;
+				
+				if (numVotes == Object.keys(App.Host.roundResponses).length) {
+					console.log('All votes!');
+					console.log(App.Host.points);
+				}
+			}
 		},
 		 
 		 ///
@@ -539,6 +587,10 @@ jQuery(function($) {
 			onResponse: function(data) {
 				// do nothing...
 			},		
+			
+			voteCasted: function(data) {
+				// do nothing...
+			},
 		},
 	};
 	IO.init();
