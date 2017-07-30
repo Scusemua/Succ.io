@@ -32,8 +32,8 @@ jQuery(function($) {
 			IO.socket.on('gameOver', IO.gameOver);							// Fires when a game ends.
 			IO.socket.on('error-occurred', IO.error);						// Fires when an error records.
 			IO.socket.on('game-started', IO.showGameScreen);				// Fires when the game has been started by the host and the game actually started.
-			IO.socket.on('response', IO.onResponse)							// Fires when a player sends a response to a question to the server (from in-game).
-						IO.socket.on('voting-begins', IO.votingBegins);		// Fires when all responses have been submitted and the voting phase begins.
+			IO.socket.on('response', IO.onResponse);						// Fires when a player sends a response to a question to the server (from in-game).
+			IO.socket.on('voting-begins', IO.votingBegins);		// Fires when all responses have been submitted and the voting phase begins.
 			IO.socket.on('chat message', function(msg) {					// Fires when a player sends a chat message (from the pre-game lobby).
 				$('#messages').append($('<li>').text(msg));
 			});
@@ -113,7 +113,7 @@ jQuery(function($) {
 		// The data passed to the function is the socket id of the disconnected client. This
 		// is used to remove that list element from the players waiting list.
 		playerDisconnected: function(data) {
-			$('#listElement_' + data).hide('slow', function(){ $('#listElement_' + data).remove(); });
+			App.playerDisconnected(data);
 		},		
 		
 		// Executes when a player responds to a question in-game.
@@ -123,7 +123,7 @@ jQuery(function($) {
 		
 		// Executes when the voting phase of the game/round begins.
 		votingBegins: function(data) {
-			App[App.myRole].votingBegins(data);
+			App.votingBegins(data);
 		}
 	};
 	
@@ -158,6 +158,7 @@ jQuery(function($) {
 		
 		/* Flag which indicates whether or not the game has started */
 		gameStarted: false,
+		
 		//
 		//
 		//
@@ -165,7 +166,6 @@ jQuery(function($) {
 		//
 		//
 		//
-		
 		/**
 		 * This function executes when the page initially loads.
 		 */ 
@@ -184,15 +184,28 @@ jQuery(function($) {
 		cacheElements: function() {
 			App.$doc = $(document);
 
+			//
 			// Templates
-			App.$gameArea = $('#gameArea');
+			//
+			// This is the main container where all game UI will be displayed.
+			App.$gameArea = $('#gameArea');						
+			// This is the container which will house the 'Start' button for just the host client.
 			App.$hostStartBtnArea = $('#hostStartBtnArea');
-			
+			// This is the template which contains the question and response interface.
+			App.$templateQuestionGame = $('#game-question-template').html();
+			// Contains the interface for voting for respones.
+			App.$templateVoteGame = $('#game-voting-template').html();
+			// Contains the interface for choosing to join an existing game or create a new game.
 			App.$templateJoinCreate = $('#join-create-template').html();
+			// Contains the interface for entering one's nickname.
 			App.$templateNickname = $('#nickname-template').html();
+			// This is the start button which is to be displayed within the hostStartBtnArea for JUST the host client.
 			App.$templateHostStartBtn = $('#host-start-button-template').html();
+			// This is the template for the pre-game lobby; this is displayed within the gameArea.
 			App.$templateLobby = $('#lobby-template').html();
+			// This is the template which contains the interface for supplying a game number and attempting to connect to the corresponding game.
 			App.$templateJoinGame = $('#join-game-template').html();
+			// This is the overall template for the game. It contains the panelContent element.
 			App.$templateGame = $('#game-template').html();
 		},
 		 
@@ -259,6 +272,8 @@ jQuery(function($) {
 			App.$gameArea.html(App.$templateGame).hide();
 			App.$gameArea.fadeIn();
 			
+			$('#panel-content').html(App.$templateQuestionGame);
+			
 			// Populate the list of players.
 			for (var i = 0; i < data.memberNames.length; i++) {
 				var elementId = "listElement_" + data.memberSockets[i];
@@ -278,13 +293,26 @@ jQuery(function($) {
 			return flag;
 		},		
 		
-		/**
-		 * A player has successfully joined the game.
-		 * @param data {{playerName: string, gameId: int, mySocketId: int}}
-		 */
-		playerJoinedRoom : function(data) {
-			// Do nothing...
+		// Executes when a player disconnects from the game. Removes them from the player list.
+		playerDisconnected: function(data) {
+			$('#listElement_' + data).hide('slow', function(){ $('#listElement_' + data).remove(); });
 		},
+		
+		// Executes when the voting phase of the game/round begins.
+		votingBegins: function(data) {
+			// This is a container within the game template. This houses the question and voting interfaces. We swap between
+			// the two interfaces (which are kept within their own templates) depending on if we are in a question/respone or voting phase of the game.				
+			$('#panel-content').html(App.$templateVoteGame);
+			var list = $('#response-list');
+			for (var i = 0; i < data.keys.length; i++) {
+				console.log('key: ' + data.keys[i]);
+				console.log('values: ' + data.values[i]);
+			}
+			
+			for (var i = 0; i < data.keys.length; i++) {
+				$('<a href="#" id="e_' + data.keys[i] + '" + class="list-group-item">' + data.values[i] + '</a>').appendTo(list).hide().slideDown();
+			}
+		},			
 		 
 		///
 		///
@@ -299,9 +327,9 @@ jQuery(function($) {
 			// References to the player data.
 			players: [],
 
-			roundResponses: new Map(),
+			roundResponses: {},
 			
-			points: new Map(),
+			points: {},
 			
 			gameStarting: false,
 			
@@ -343,13 +371,7 @@ jQuery(function($) {
 				
 				var elementId = "listElement_" + App.mySocketId;
 				$('<li id=' + elementId + '>' + App.Player.myName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
-			},
-			
-			// Add a player's name to the list of waiting players.
-			updateWaitingScreen: function(data) {
-				var elementId = "listElement_" + data.playerId;
-				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
-			},			
+			},	
 			
 			onStartClick: function() {
 				if (App.gameStarting) {
@@ -366,7 +388,7 @@ jQuery(function($) {
 					}
 					// Emit a countdown to the server which will then start displaying the count-down in the chat to the users.
 					IO.socket.emit('countdown', data);
-					App.counter--;
+					App.counter = App.counter - 100;
 					// Display 'counter' wherever you want to display it.
 					if (App.counter < 0) {
 						// Tell the server that the game is starting.
@@ -381,32 +403,19 @@ jQuery(function($) {
 			/* When a player enters and submits a response to a question, an event is fired and this method is executed by the host (server-side). */
 			onResponse: function(data) {
 				// console.log('Client ' + data.playerId + ' responded with: ' + data.response);
-				App.Host.roundResponses.set(data.playerId, data.response);
-				
-				// console.log('Response from ' + data.playerId + ': ' + data.response);
-				
-				// console.log('Size of roundResponses: ' + App.Host.roundResponses.size);
-				// console.log('Number of players in the room: ' + App.Host.numPlayersInRoom);
+				// App.Host.roundResponses.set(data.playerId, data.response);
+				App.Host.roundResponses[data.playerId] = data.response;
 				
 				// Everybody has submitted a response. 
-				if (App.Host.roundResponses.size == App.Host.numPlayersInRoom) {
-					
-					// Grab the keys of the roundResponses map and use them to create a list of values. 
-					// We then pass the list to the other clients through an event so the clients may display the responses.
-					var keys = Object.keys(App.Host.roundResponses);
-
-					var values = keys.map(function(v) { return App.Host.roundResponses[v]; });
-					
-					for (var response in values) {
-						console.log(response);
+				if (Object.keys(App.Host.roundResponses).length == App.Host.numPlayersInRoom) {
+					var d = {
+						keys: Object.keys(App.Host.roundResponses),
+						values: Object.values(App.Host.roundResponses),
+						gameId: App.gameId
 					}
 					
-					var data = {
-						responses: values
-					}
-					io.socket.emit('voting-begins', data);
-					// We need to display the voting screen now, and then we must begin tallying votes.
-					$('#title-text').prop('innerText', 'Vote');
+					// Tell the server to emit the event to all CLIENTS in the game room INCLUDING THE SENDER. 
+					IO.socket.emit('voting-begins', d);
 				}
 			},
 
@@ -415,10 +424,10 @@ jQuery(function($) {
 			 * @param data {{playerName: string, gameId: int, mySocketId: int}}
 			 */
 			playerJoinedRoom : function(data) {
-				// When a player joins the lobby, do the updateWaitingScreen function.
-				App.Host.updateWaitingScreen(data);
+				var elementId = "listElement_" + data.playerId;
+				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
 				App.Host.numPlayersInRoom++;
-			}		
+			}			
 		},
 		 
 		 ///
@@ -517,10 +526,19 @@ jQuery(function($) {
 				
 				App.Player.displayNewGameScreen(data);			
 			},
+			
+			/**
+			 * A player has successfully joined the game.
+			 * @param data {{playerName: string, gameId: int, mySocketId: int}}
+			 */
+			playerJoinedRoom : function(data) {
+				var elementId = "listElement_" + data.playerId;
+				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+			},			
 
 			onResponse: function(data) {
 				// do nothing...
-			}
+			},		
 		},
 	};
 	IO.init();

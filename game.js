@@ -15,6 +15,7 @@ exports.initGame = function(sio, socket) {
 	gameSocket.on('response', function(data) {					// Fires when a player sends a response to the server from the actual game.
 		io.in(data.gameId).emit('response', data);
 	});
+	gameSocket.on('voting-begins', votingBegins);
 	
 	// Player Events
 	gameSocket.on('playerJoinGame', playerJoinGame);			// Fires when a player joins the game room.
@@ -71,6 +72,14 @@ function gameStarting(gameId) {
 	io.in(gameId).emit('game-started', personalData);
 };
 
+// This event is triggered when the voting phase of the game begins. The host client will emit an event to the server which
+// will execute this method. This method will emit events to all the clients in thr host client's room to notify the
+// clients that it is time to vote. This method will also send the clients the responses to the clients may display them and report the votes
+// back to the server and then host client properly.
+function votingBegins(data) {
+	io.in(data.gameId).emit('voting-begins', data);
+}
+
 ///
 ///
 ///
@@ -78,7 +87,6 @@ function gameStarting(gameId) {
 ///
 ///
 ///
-
 // A player clicked the 'START GAME' button.
 // Attempt to connect them to a room that matches the gameId entered by the player.
 function playerJoinGame(data) {

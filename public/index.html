@@ -116,17 +116,13 @@
 				<div class="row">
 					<div class="col-lg-9 col-md-9 col-sm-6">
 						<div class="panel panel-primary">
-							<div id="chat-panel-heading" class="panel-heading">
+							<div class="panel-heading">
 								<h3 id="title-text" class="panel-title">Question</h3>
 							</div>
 							<div class="panel-body">
-								<div id="question">
-									<h2>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus aliquet lacus dui, vel venenatis leo iaculis a. Nulla eleifend dolor vitae nibh fermentum aliquet.</h2>
+								<div id="panel-content">
+							
 								</div>
-								<form id="response-form">
-									<label for="response">Response:</label>
-									<input type="text" class="form-control" id="response" placeholder="Type your response here." autocomplete="off">								
-								</form>
 							</div>
 						</div>
 					</div>
@@ -154,6 +150,27 @@
 			</div>
 		</script>	
 	</body>
+	
+	<!-- This template is used to display the question and response form during the actual game. -->
+	<script id="game-question-template" type="text/template">
+		<div>
+			<h2 id="question">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus aliquet lacus dui, vel venenatis leo iaculis a. Nulla eleifend dolor vitae nibh fermentum aliquet.</h2>
+		</div>
+		<form id="response-form">
+			<label for="response">Response:</label>
+			<input type="text" class="form-control" id="response" placeholder="Type your response here." autocomplete="off">								
+		</form>		
+	</script>
+	
+	<!-- This tempalte is used to display the voting interface after all responses have been submitted during the game. -->
+	<script id="game-voting-template" type="text/template">
+		<div>
+			<h3 id="question-voting">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus aliquet lacus dui, vel venenatis leo iaculis a. Nulla eleifend dolor vitae nibh fermentum aliquet.</h3>
+		</div>
+		<div id="response-list" class="list-group">
+		
+		</div>
+	</script>
 	
     <!-- JavaScript Libraries -->
 
