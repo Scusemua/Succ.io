@@ -130,7 +130,6 @@ jQuery(function($) {
 		// Executes when the server notifies the clients of a vote-casted.
 		// This will only trigger a method on the host client.
 		voteCasted: function(data) {
-			console.log('test');
 			App[App.myRole].voteCasted(data);
 		}
 	};
@@ -245,9 +244,14 @@ jQuery(function($) {
 			});
 			// Button which sends to the server this client's vote for the best answer. Disables the vote button once vote is submitted.
 			App.$doc.on('click', '#btnConfirmVote', function(e) {
+				// Ensure the user has something selected.
+				if (App.selectedId === '') {
+					return;
+				}
 				$(this).prop("disabled",true);
+				console.log(App.selectedId);
 				var data = {
-					gameId: App.gameID,
+					gameId: App.gameId,
 					vote: App.selectedId
 				};
 				IO.socket.emit('vote-casted', data);
@@ -460,7 +464,6 @@ jQuery(function($) {
 			},
 
 			voteCasted: function(data) {
-				console.log('test');
 				if (App.Host.points[data.vote] != null) 
 				{
 					App.Host.points[data.vote]++;
@@ -469,11 +472,18 @@ jQuery(function($) {
 				{
 					App.Host.points[data.vote] = 1;
 				}
-				numVotes++;
+				App.Host.numVotes++;
 				
-				if (numVotes == Object.keys(App.Host.roundResponses).length) {
-					console.log('All votes!');
-					console.log(App.Host.points);
+				if (App.Host.numVotes == Object.keys(App.Host.roundResponses).length) {
+					var dataToServer = {
+						keysPoints: Object.keys(App.Host.points),
+						valuesPoints: Object.values(App.Host.points),
+						keysResponses: Object.keys(App.Host.roundResponses),
+						valuesResponses: Object.values(App.Host.roundResponses),
+						gameId: App.gameId
+					}
+					
+					IO.socket.emit('all-votes', dataToServer);
 				}
 			}
 		},

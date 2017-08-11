@@ -17,6 +17,7 @@ exports.initGame = function(sio, socket) {
 	});
 	gameSocket.on('voting-begins', votingBegins);
 	gameSocket.on('vote-casted', voteCasted);
+	gameSocket.on('all-votes', allVotesReceived);
 	
 	// Player Events
 	gameSocket.on('playerJoinGame', playerJoinGame);			// Fires when a player joins the game room.
@@ -85,6 +86,34 @@ function votingBegins(data) {
 // to the clients, telling the host to increase the point tally for the appropriate response based on the vote field of the data parameter.
 function voteCasted(data) {
 	io.in(data.gameId).emit('vote-casted', data);
+}
+
+function allVotesReceived(data) {
+	var i;							// Loop.
+	var max = data.valuesPoints[0]; // Maximum value.
+	var maxId = data.keysPoints[0]; // PlayerID that got the most points.
+	var tieFound = false;			// Indicates whether or not we found a tie.
+	var winners = [];				// Array of winners (stored as their IDs).
+	for (i = 1; i < data.keysPoints.length; i++) {
+		if (data.valuesPoints[i] > max) {
+			max = data.valuesPoints[i];
+			maxId = data.keysPoints[i];
+			tieFound = false;
+		}
+		if (data.valuesPoints[i] == max) {
+			tieFound = true;
+		}
+	}
+	// If tieFound is true at this point, then that means that a tie was found and no larger values came along after the tie. 
+	// Now we must find all point-values equal to max.
+	var j;
+	for (j = 0; j < data.keysPoints.length; j++) {
+		if (data.valuesPoints[j] == max) {
+			winners.push(data.keysPoints[j]);
+		}
+	}
+	console.log('Winners: ');
+	console.log(winners);
 }
 
 ///
