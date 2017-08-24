@@ -106,14 +106,24 @@ function allVotesReceived(data) {
 	}
 	// If tieFound is true at this point, then that means that a tie was found and no larger values came along after the tie. 
 	// Now we must find all point-values equal to max.
-	var j;
-	for (j = 0; j < data.keysPoints.length; j++) {
-		if (data.valuesPoints[j] == max) {
-			winners.push(data.keysPoints[j]);
-		}
+	if (tieFound == true) {
+		var j;
+		for (j = 0; j < data.keysPoints.length; j++) {
+			if (data.valuesPoints[j] == max) {
+				winners.push(data.keysPoints[j]);
+			}
+		}		
 	}
-	console.log('Winners: ');
-	console.log(winners);
+	else {
+		winners.push(data.keysPoints[maxId]);
+	}
+	
+	var finalData = {
+		winners: winners,
+		responses: data.valuesResponses
+	}
+	
+	io.in(data.gameId).emit('all-votes', finalData);
 }
 
 ///

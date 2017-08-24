@@ -38,6 +38,7 @@ jQuery(function($) {
 				$('#messages').append($('<li>').text(msg));
 			});
 			IO.socket.on('vote-casted', IO.voteCasted);
+			IO.socket.on('all-votes', IO.allVotes);
 			/* When the player hits 'enter' while typing in the chat box */
 			$(document).on('submit', '#message-box-form', function() {
 				// Grab the text and verify that it isn't empty or just spaces.
@@ -131,6 +132,10 @@ jQuery(function($) {
 		// This will only trigger a method on the host client.
 		voteCasted: function(data) {
 			App[App.myRole].voteCasted(data);
+		},
+		
+		allVotes: function(data) {
+			App[App.myRole].allVotes(data);
 		}
 	};
 	
@@ -219,6 +224,8 @@ jQuery(function($) {
 			App.$templateJoinGame = $('#join-game-template').html();
 			// This is the overall template for the game. It contains the panelContent element.
 			App.$templateGame = $('#game-template').html();
+			// This is the template for displaying the most-voted response at the end of the voting stage.
+			App.$templateFinalResults = $('#game-display-results').html();
 		},
 		 
 		/**
@@ -254,6 +261,7 @@ jQuery(function($) {
 					gameId: App.gameId,
 					vote: App.selectedId
 				};
+				console.log('Confirm Vote: ' + App.selectedId);
 				IO.socket.emit('vote-casted', data);
 			});		
 		}, 
@@ -331,20 +339,34 @@ jQuery(function($) {
 			$('#panel-content').html(App.$templateVoteGame);
 			var list = $('#response-list');
 			
-			// for (var i = 0; i < data.keys.length; i++) {
-			// console.log('key: ' + data.keys[i]);
-			// console.log('values: ' + data.values[i]);
-			// }
+			// Using Fisher-Yates algorithm, shuffle the array so it isn't obvious whose answers are whose.
+			var currentIndex = data.keys.length, temporaryValue, randomIndex;
+			
+		    // While there remain elements to shuffle...
+		    while (0 !== currentIndex) {
+
+			  // Pick a remaining element...
+			  randomIndex = Math.floor(Math.random() * currentIndex);
+			  currentIndex -= 1;
+
+			  // And swap it with the current element.
+			  temporaryValue = data.keys[currentIndex];
+			  data.keys[currentIndex] = data.keys[randomIndex];
+			  data.keys[randomIndex] = temporaryValue;
+			  
+			  temporaryValue = data.values[currentIndex];
+			  data.values[currentIndex] = data.values[randomIndex];
+			  data.values[randomIndex] = temporaryValue;			  
+		    }
 			
 			// Load all of the respones into the list.
 			for (var i = 0; i < data.keys.length; i++) {
-				// $('<a href="#" id="e_' + data.keys[i] + '" + class="list-group-item">' + data.values[i] + '</a>').appendTo(list).hide().slideDown();
 				$('<button type="button" id="e_' + data.keys[i] + '" + class="list-group-item">' + data.values[i] + '</button>').appendTo(list).hide().slideDown();
 				$('#e_' + data.keys[i]).on('click', function() {
-					App.selectedId = $(this).attr('id').substring(3);
+					App.selectedId = $(this).attr('id').substring(2);
 				});	
 			}			
-		},			
+		},		
 		 
 		///
 		///
@@ -485,7 +507,24 @@ jQuery(function($) {
 					
 					IO.socket.emit('all-votes', dataToServer);
 				}
-			}
+			},
+			
+			allVotes: function(data) {
+				$('#panel-content').html(App.$templateFinalResults);	
+				
+				for (var winner in data.winners) {
+					console.log(winner, '= ', JSON.stringify(data.winners[winner]));
+				}
+				
+				for (var i = 0; i < data.winners.length; i++) {
+					var elementId = "listElement_" + data.winners[i];
+					var index = data.winners[i];
+					console.log('index: ' + index);
+					var str = JSON.stringify(data.responses[index]);
+					console.log('str: ' + str);
+					$('<li id=' + elementId + '>' + str + '</li>').appendTo('#winning-response-list');
+				}				
+			},			
 		},
 		 
 		 ///
@@ -601,6 +640,16 @@ jQuery(function($) {
 			voteCasted: function(data) {
 				// do nothing...
 			},
+			
+			allVotes: function(data) {
+				$('#panel-content').html(App.$templateFinalResults);	
+				for (var i = 0; i < data.winners.length; i++) {
+					var elementId = "listElement_" + data.winners[i];
+					var str = JSON.stringify(data.responses[data.winners[i]]);
+					console.log('str: ' + str);
+					$('<li id=' + elementId + '>' + str + '</li>').appendTo('#winning-response-list');
+				}		
+			}						
 		},
 	};
 	IO.init();
