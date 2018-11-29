@@ -3,11 +3,16 @@ var gameSocket;
 
 // TO-DO:
 // 1.) Player joining mid-game 
+      // UI doesn't update immediately (until round ends or goes to voting or something)
 // 2.) Host leaves game so need to create new host 
 // 3.) Rounds aren't working 
+      // Goes to next round, but doesn't reset all submissions/votes for some reason? 
 // 4.) Player leaving mid-round before voting 
-         // No longer need their vote 
-         // If they've already voted, remove their response? 
+      // No longer need their vote 
+      // If they've already voted, remove their response? 
+// 5.) More visual indication that vote was received
+      // Highlight the response that the user voted for 
+// 6.) Bold own name in player list       
 
 // Function called to initialize a new game instance.
 // @param sio The Socket.IO library

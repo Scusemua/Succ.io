@@ -398,7 +398,7 @@ jQuery(function($) {
 			
 			numVotes: 0,
 			
-			gameStarting: false,
+			gameStarted: false,
 			
 			// Flag to indicate if a new game is starting.
 			// Used when game ends and players start new game
@@ -467,10 +467,10 @@ jQuery(function($) {
 			},	
 			
 			onStartClick: function() {
-				if (App.gameStarting) {
+				if (App.gameStarted) {
 					return false;
 				}
-				App.gameStarting = true;
+				App.gameStarted = true;
 				// Tell the server that the host clicked start.
 				// App.$gameArea.html(App.$templateActualGame);
 				var intervalId;
@@ -585,8 +585,11 @@ jQuery(function($) {
             // If this is not reset, then the user won't be able to submit a new answer.
             App.responded = false;
             
+            // Reset the vote counter.
+            App.Host.numVotes = 0;
+            
             // Increment the round counter. 
-            currentRound = currentRound + 1;
+            App.currentRound = App.currentRound + 1;
             
             // Make sure to clear the roundResponses dictionary/map as well.
             App.Host.roundResponses = {}   
@@ -654,29 +657,44 @@ jQuery(function($) {
 				
 				if (!isnum) {
 					window.alert("Please only enter numbers [0-9] in the Game ID input box.");
-					return;
+               return;
 				}
 
-                // Collect data to send to the server.
-                var data = {
-                    gameId : +($('#inputGameId').val()),
-					playerId: App.mySocketId,
-                    playerName : App.Player.myName
-                };				
-				
-                // Send the gameId and playerName to the server
-                IO.socket.emit('playerJoinGame', data);
+            // Collect data to send to the server.
+            var data = {
+               gameId : +($('#inputGameId').val()),
+               playerId: App.mySocketId,
+               playerName : App.Player.myName
+            };				
+
+            // Send the gameId and playerName to the server
+            IO.socket.emit('playerJoinGame', data);
 			},
 			
-			// Display the new game screen. This screen won't have a "start" button since this is the player and not the host.
-			displayNewGameScreen: function(data) {
-				// Fill the game area with the appropriate HTMl
-				App.$gameArea.html(App.$templateLobby).hide();
-				App.$gameArea.fadeIn();
+			// Display the game screen. If the game hasn't started yet, then the lobby
+         // will be displayed. This screen won't have a "start" button since this is 
+         // the player and not the host.
+			displayGameScreen: function(data) {
+            // If the game hasn't started yet, then just display the lobby/chat room. 
+            if (!App.gameStarted) {
+               // Fill the game area with the appropriate HTMl
+               App.$gameArea.html(App.$templateLobby).hide();
+               App.$gameArea.fadeIn();
 
-				// Show the gameID / room ID on the screen.
-				$('#gameCode').text('Room #: ' + App.gameId);
-				App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
+               // Show the gameID / room ID on the screen.
+               $('#gameCode').text('Room #: ' + App.gameId);
+               App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
+            }
+            // Else, display the actual game screen so the user can participate. 
+            else {
+               // Fill the game area with the appropriate HTMl
+               App.$gameArea.html(App.$templateLobby).hide();
+               App.$gameArea.fadeIn();
+               
+               $('#panel-content').html(App.$templateQuestionGame);
+               
+               $('#gameCode').hide();
+            }
 				
 				// Add each player already in the lobby (including THIS client) to the players waiting list.
 				// We animate the additions so it looks nice.
@@ -690,7 +708,7 @@ jQuery(function($) {
 			youJoinedRoom: function(data) {
 				App.gameId = data.gameId;
 				
-				App.Player.displayNewGameScreen(data);			
+				App.Player.displayGameScreen(data);			
 			},
 			
 			/**
@@ -754,9 +772,6 @@ jQuery(function($) {
             // Reset the flag indicating that the user has responded. 
             // If this is not reset, then the user won't be able to submit a new answer.
             App.responded = false; 	            
-            
-            // Increment the round counter. 
-            currentRound = currentRound + 1;
          }        
 		},
 	};
