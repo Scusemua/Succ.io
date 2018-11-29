@@ -24,19 +24,20 @@ jQuery(function($) {
 		 */
 		bindEvents : function() {
 			IO.socket.on('connected', IO.onConnected);						// Fires when first connected to server.
-			IO.socket.on('player-disconnected', IO.playerDisconnected);		// Fires when a player disconnects from the server.
+			IO.socket.on('player-disconnected', IO.playerDisconnected);	// Fires when a player disconnects from the server.
 			IO.socket.on('newGameCreated', IO.onNewGameCreated);			// Fires when a new game is created, rendering the client which fired the event a 'Host'.
-			IO.socket.on('playerJoinedRoom', IO.playerJoinedRoom);			// Fires when a player joins the game room.
+			IO.socket.on('playerJoinedRoom', IO.playerJoinedRoom);		// Fires when a player joins the game room.
 			IO.socket.on('youJoinedRoom', App.Player.youJoinedRoom);		// Fires from the player's socket to the player's client when they join a room.
 			IO.socket.on('beginNewGame', IO.beginNewGame);					// Fires when the host starts the game from the pre-game lobby.
-			IO.socket.on('gameOver', IO.gameOver);							// Fires when a game ends.
-			IO.socket.on('error-occurred', IO.error);						// Fires when an error records.
+			IO.socket.on('gameOver', IO.gameOver);							   // Fires when a game ends.
+			IO.socket.on('error-occurred', IO.error);					   	// Fires when an error records.
 			IO.socket.on('game-started', IO.showGameScreen);				// Fires when the game has been started by the host and the game actually started.
-			IO.socket.on('response', IO.onResponse);						// Fires when a player sends a response to a question to the server (from in-game).
-			IO.socket.on('voting-begins', IO.votingBegins);		// Fires when all responses have been submitted and the voting phase begins.
-			IO.socket.on('chat message', function(msg) {					// Fires when a player sends a chat message (from the pre-game lobby).
+			IO.socket.on('response', IO.onResponse);						   // Fires when a player sends a response to a question to the server (from in-game).
+			IO.socket.on('voting-begins', IO.votingBegins);		         // Fires when all responses have been submitted and the voting phase begins.
+			IO.socket.on('chat message', function(msg) {					   // Fires when a player sends a chat message (from the pre-game lobby).
 				$('#messages').append($('<li>').text(msg));
 			});
+         IO.socket.on('next-round', IO.nextRound);
 			IO.socket.on('vote-casted', IO.voteCasted);
 			IO.socket.on('all-votes-final', IO.allVotesFinal);
 			/* When the player hits 'enter' while typing in the chat box */
@@ -58,7 +59,10 @@ jQuery(function($) {
 				// Grab the text and verify that it isn't empty or just spaces.
 				var response = $('#response').val();
 				var valid = App.verifyText(response);
-				if (!valid) return null;
+				if (!valid) {
+               alert("Answer cannot consist solely of spaces and must be under 1000 characters in length.");
+               return;
+            }
 				// Append the player's name to the message.
 				response = response;
 				var data = {
@@ -136,7 +140,11 @@ jQuery(function($) {
 		
 		allVotesFinal: function(data) {
 			App[App.myRole].allVotesFinal(data);
-		}
+		},
+      
+      nextRound: function(data) {
+         App[App.myRole].nextRound(data);
+      }
 	};
 	
 	var App = {
@@ -255,7 +263,7 @@ jQuery(function($) {
 				if (App.selectedId === '') {
 					return;
 				}
-				$(this).prop("disabled",true);
+				$('#btnConfirmVote').prop("disabled",true);
 				console.log(App.selectedId);
 				var data = {
 					gameId: App.gameId,
@@ -339,7 +347,12 @@ jQuery(function($) {
 			// This is a container within the game template. This houses the question and voting interfaces. We swap between
 			// the two interfaces (which are kept within their own templates) depending on if we are in a question/respone or voting phase of the game.				
 			$('#panel-content').html(App.$templateVoteGame);
-			var list = $('#response-list');
+			
+         // Make sure the vote button is enabled. If this is not the first 
+         // round, then it will be disabled from the last round (I think?)
+         $('#btnConfirmVote').prop("disabled", false);
+         
+         var list = $('#response-list');
 			
 			// Using Fisher-Yates algorithm, shuffle the array so it isn't obvious whose answers are whose.
 			var currentIndex = data.keys.length, temporaryValue, randomIndex;
@@ -499,10 +512,6 @@ jQuery(function($) {
 				App.Host.numVotes++;
 				
 				if (App.Host.numVotes == Object.keys(App.Host.roundResponses).length) {
-               console.log("Object.keys(App.Host.points) = " + Object.keys(App.Host.points));
-               console.log("Object.values(App.Host.points) = " + Object.values(App.Host.points));
-               console.log("Object.keys(App.Host.roundResponses) = " + Object.keys(App.Host.roundResponses));
-               console.log("Object.values(App.Host.roundResponses) = " + Object.values(App.Host.roundResponses));
 					var dataToServer = {
 						keysPoints: Object.keys(App.Host.points),
 						valuesPoints: Object.values(App.Host.points),
@@ -515,8 +524,11 @@ jQuery(function($) {
 				}
 			},
 			
+         // This function is triggered by an event emitted by the server once the server is finished
+         // tallying all of the votes and whatnot. Ten seconds after the server emits that event, the
+         // server will emit an event starting the next round.
 			allVotesFinal: function(data) {
-            console.log("allVotes() called for host")
+            // Host Method 
 				$('#panel-content').html(App.$templateFinalResults);	
 				
 				for (var winner in data.winners) {
@@ -530,11 +542,31 @@ jQuery(function($) {
                if (str.length > 100) {
                   str = str.substring(0, 100) + "..."
                }
-               str = str + " [votes received: " + data.maxVotes + "]"
+               str = str + " <strong>[votes received: " + data.maxVotes + "]</strong>"
 					console.log('str: ' + str);
 					$('<li id=' + elementId + '>' + str + '</li>').appendTo('#winning-response-list');
 				}				
-			},			
+			},	
+
+         nextRound: function(data) {
+            console.log("[HOST] Starting next round...");
+            
+            // Animate the transition.
+            App.$gameArea.html(App.$templateGame).hide();
+            App.$gameArea.fadeIn();
+            
+            $('#panel-content').html(App.$templateQuestionGame);            
+            
+            // Re-enable the ability to submit an answer.
+            $('#response').prop('disabled', false);
+            
+            // Reset the flag indicating that the user has responded. 
+            // If this is not reset, then the user won't be able to submit a new answer.
+            App.responded = false;
+            
+            // Make sure to clear the roundResponses dictionary/map as well.
+            App.Host.roundResponses = {}
+         },
 		},
 		 
 		 ///
@@ -651,16 +683,43 @@ jQuery(function($) {
 				// do nothing...
 			},
 			
+         // This function is triggered by an event emitted by the server once the server is finished
+         // tallying all of the votes and whatnot. Ten seconds after the server emits that event, the
+         // server will emit an event starting the next round.         
 			allVotesFinal: function(data) {
-            console.log("allVotes() called for client/player")
+            // Player method 
 				$('#panel-content').html(App.$templateFinalResults);	
+				
 				for (var i = 0; i < data.winners.length; i++) {
 					var elementId = "listElement_" + data.winners[i];
-					var str = JSON.stringify(data.responses[data.winners[i]]);
-					console.log('str: ' + str);
+					var str = JSON.stringify(data.responses[i]);
+               // If the winning entry was longer than 100, then only display the first 100 characters.
+               if (str.length > 100) {
+                  str = str.substring(0, 100) + "..."
+               }
+               str = str + " <strong>[votes received: " + data.maxVotes + "]</strong>"
+					// console.log('str: ' + str);
 					$('<li id=' + elementId + '>' + str + '</li>').appendTo('#winning-response-list');
-				}		
-			}						
+				}            
+			},
+         
+         nextRound: function(data) {
+            console.log("[PLAYER] Starting next round...");
+            
+            // Animate the transition.
+            App.$gameArea.html(App.$templateGame).hide();
+            App.$gameArea.fadeIn();
+            
+            $('#panel-content').html(App.$templateQuestionGame); 
+
+            // Re-enable the ability to submit an answer.
+            $('#response').prop('disabled', false);            
+            
+            // Reset the flag indicating that the user has responded. 
+            // If this is not reset, then the user won't be able to submit a new answer.
+            App.responded = false;            
+            
+         }         
 		},
 	};
 	IO.init();

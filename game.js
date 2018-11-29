@@ -135,6 +135,10 @@ function allVotesReceived(data) {
 	}
 	
 	io.in(data.gameId).emit('all-votes-final', finalData);
+   
+   setTimeout(function() {
+      io.in(data.gameId).emit('next-round', finalData);
+   }, 10000);
 }
 
 ///
