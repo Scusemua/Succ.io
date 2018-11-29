@@ -528,6 +528,7 @@ jQuery(function($) {
          // tallying all of the votes and whatnot. Ten seconds after the server emits that event, the
          // server will emit an event starting the next round.
 			allVotesFinal: function(data) {
+            console.warn("allVotesFinal() [HOST]");
             // Host Method 
 				$('#panel-content').html(App.$templateFinalResults);	
 				
@@ -565,7 +566,7 @@ jQuery(function($) {
             App.responded = false;
             
             // Make sure to clear the roundResponses dictionary/map as well.
-            App.Host.roundResponses = {}
+            App.Host.roundResponses = {}            
          },
 		},
 		 
@@ -687,6 +688,8 @@ jQuery(function($) {
          // tallying all of the votes and whatnot. Ten seconds after the server emits that event, the
          // server will emit an event starting the next round.         
 			allVotesFinal: function(data) {
+            console.warn("allVotesFinal() [PLAYER]");
+            
             // Player method 
 				$('#panel-content').html(App.$templateFinalResults);	
 				
@@ -717,7 +720,7 @@ jQuery(function($) {
             
             // Reset the flag indicating that the user has responded. 
             // If this is not reset, then the user won't be able to submit a new answer.
-            App.responded = false;            
+            App.responded = false; 	            
             
          }         
 		},

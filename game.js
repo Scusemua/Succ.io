@@ -89,13 +89,13 @@ function voteCasted(data) {
 }
 
 function allVotesReceived(data) {
-   // console.warn("allVotesReceived() called...")
+   console.warn("allVotesReceived() called...")
    // console.warn("data = " + data)
 	var i;							      // Loop.
 	var max = data.valuesPoints[0];  // Maximum value.
-   console.warn("max = " + max);
+   // console.warn("max = " + max);
 	var maxId = data.keysPoints[0];  // PlayerID that got the most points.
-   console.warn("maxId = " + maxId);
+   // console.warn("maxId = " + maxId);
 	var tieFound = false;			   // Indicates whether or not we found a tie.
 	var winners = [];				      // Array of winners (stored as their IDs).
    // Find largest or find a tie...
@@ -136,9 +136,11 @@ function allVotesReceived(data) {
 	
 	io.in(data.gameId).emit('all-votes-final', finalData);
    
+   // TODO: CHANGE THE '1500' TO '10000'
+   // IT IS '1500' TO SPEED UP TESTING 
    setTimeout(function() {
       io.in(data.gameId).emit('next-round', finalData);
-   }, 10000);
+   }, 1500);
 }
 
 ///
