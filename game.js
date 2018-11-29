@@ -1,6 +1,14 @@
 var io;
 var gameSocket;
 
+// TO-DO:
+// 1.) Player joining mid-game 
+// 2.) Host leaves game so need to create new host 
+// 3.) Rounds aren't working 
+// 4.) Player leaving mid-round before voting 
+         // No longer need their vote 
+         // If they've already voted, remove their response? 
+
 // Function called to initialize a new game instance.
 // @param sio The Socket.IO library
 // @param socket The socket object used for the connected client
@@ -85,6 +93,7 @@ function votingBegins(data) {
 // This event is triggered when a client votes for a response during the voting stage of the game. This method will emit an event
 // to the clients, telling the host to increase the point tally for the appropriate response based on the vote field of the data parameter.
 function voteCasted(data) {
+   console.warn("Vote was casted in game: " + data.gameId);
 	io.in(data.gameId).emit('vote-casted', data);
 }
 

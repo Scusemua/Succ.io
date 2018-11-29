@@ -119,7 +119,7 @@ jQuery(function($) {
 		// The data passed to the function is the socket id of the disconnected client. This
 		// is used to remove that list element from the players waiting list.
 		playerDisconnected: function(data) {
-			App.playerDisconnected(data);
+			App[App.myRole].playerDisconnected(data);
 		},		
 		
 		// Executes when a player responds to a question in-game.
@@ -281,15 +281,15 @@ jQuery(function($) {
 			App.$gameArea.fadeIn();
 		},
 		
-        /**
-         * Show the initial screen
-         * (with Start and Join buttons)
-         */
-        showInitScreen: function() {
-			// Animate the transition.
-            App.$gameArea.html(App.$templateNickname).hide();
-			App.$gameArea.fadeIn();
-        },		
+     /**
+      * Show the initial screen
+      * (with Start and Join buttons)
+      */
+     showInitScreen: function() {
+      // Animate the transition.
+         App.$gameArea.html(App.$templateNickname).hide();
+      App.$gameArea.fadeIn();
+     },		
 		
 		 
 		// Make the text inside the given element as big as possible.
@@ -337,16 +337,12 @@ jQuery(function($) {
 			return flag;
 		},		
 		
-		// Executes when a player disconnects from the game. Removes them from the player list.
-		playerDisconnected: function(data) {
-			$('#listElement_' + data).hide('slow', function(){ $('#listElement_' + data).remove(); });
-		},
-		
 		// Executes when the voting phase of the game/round begins.
 		votingBegins: function(data) {
 			// This is a container within the game template. This houses the question and voting interfaces. We swap between
 			// the two interfaces (which are kept within their own templates) depending on if we are in a question/respone or voting phase of the game.				
-			$('#panel-content').html(App.$templateVoteGame);
+			$('#panel-content').html(App.$templateVoteGame).hide();
+         $('#panel-content').fadeIn();
 			
          // Make sure the vote button is enabled. If this is not the first 
          // round, then it will be disabled from the last round (I think?)
@@ -427,6 +423,32 @@ jQuery(function($) {
 
 				App.Host.displayNewGameScreen();
 			},
+         
+         // Executes when a player disconnects from the game. Removes them from the player list.
+         // Since this is the Host, this also updates the numPlayersInRoom. We need to check if
+         // all the other players have voted now since somebody left and perhaps they were the
+         // only person not to vote.
+         playerDisconnected: function(data) {
+            $('#listElement_' + data).hide('slow', function(){ $('#listElement_' + data).remove(); });
+            
+            // Decrement the number of players in the room.
+            App.Host.numPlayersInRoom = App.Host.numPlayersInRoom - 1;
+            
+            console.warn("[HOST]: Object.keys(App.Host.roundResponses).length = " + Object.keys(App.Host.roundResponses).length);
+            console.warn("[HOST]: App.Host.numPlayersInRoom = " + App.Host.numPlayersInRoom)
+            
+				// Everybody has submitted a response. 
+				if (Object.keys(App.Host.roundResponses).length >= App.Host.numPlayersInRoom) {
+					var d = {
+						keys: Object.keys(App.Host.roundResponses),
+						values: Object.values(App.Host.roundResponses),
+						gameId: App.gameId
+					}
+					
+					// Tell the server to emit the event to all CLIENTS in the game room INCLUDING THE SENDER. 
+					IO.socket.emit('voting-begins', d);
+				}            
+         },         
 			 
 			// Show the Host screen containing the game URL and
 			// the unique game ID.
@@ -511,7 +533,7 @@ jQuery(function($) {
 				}
 				App.Host.numVotes++;
 				
-				if (App.Host.numVotes == Object.keys(App.Host.roundResponses).length) {
+				if (App.Host.numVotes >= Object.keys(App.Host.roundResponses).length) {
 					var dataToServer = {
 						keysPoints: Object.keys(App.Host.points),
 						valuesPoints: Object.values(App.Host.points),
@@ -530,7 +552,8 @@ jQuery(function($) {
 			allVotesFinal: function(data) {
             console.warn("allVotesFinal() [HOST]");
             // Host Method 
-				$('#panel-content').html(App.$templateFinalResults);	
+				$('#panel-content').html(App.$templateFinalResults).hide();
+            $('#panel-content').fadeIn();
 				
 				for (var winner in data.winners) {
 					console.log(winner, '=', JSON.stringify(data.winners[winner]));
@@ -552,11 +575,8 @@ jQuery(function($) {
          nextRound: function(data) {
             console.log("[HOST] Starting next round...");
             
-            // Animate the transition.
-            App.$gameArea.html(App.$templateGame).hide();
-            App.$gameArea.fadeIn();
-            
-            $('#panel-content').html(App.$templateQuestionGame);            
+            $('#panel-content').html(App.$templateQuestionGame).hide();
+            $('#panel-content').fadeIn();
             
             // Re-enable the ability to submit an answer.
             $('#response').prop('disabled', false);
@@ -565,8 +585,14 @@ jQuery(function($) {
             // If this is not reset, then the user won't be able to submit a new answer.
             App.responded = false;
             
+            // Increment the round counter. 
+            currentRound = currentRound + 1;
+            
             // Make sure to clear the roundResponses dictionary/map as well.
-            App.Host.roundResponses = {}            
+            App.Host.roundResponses = {}   
+
+            // Clear the points dictionary/map. 
+            App.Host.points = {}
          },
 		},
 		 
@@ -675,6 +701,11 @@ jQuery(function($) {
 				var elementId = "listElement_" + data.playerId;
 				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
 			},			
+         
+         // Executes when a player disconnects from the game. Removes them from the player list.
+         playerDisconnected: function(data) {
+            $('#listElement_' + data).hide('slow', function(){ $('#listElement_' + data).remove(); });          
+         },          
 
 			onResponse: function(data) {
 				// do nothing...
@@ -691,7 +722,8 @@ jQuery(function($) {
             console.warn("allVotesFinal() [PLAYER]");
             
             // Player method 
-				$('#panel-content').html(App.$templateFinalResults);	
+				$('#panel-content').html(App.$templateFinalResults).hide();
+            $('#panel-content').fadeIn();
 				
 				for (var i = 0; i < data.winners.length; i++) {
 					var elementId = "listElement_" + data.winners[i];
@@ -713,7 +745,8 @@ jQuery(function($) {
             App.$gameArea.html(App.$templateGame).hide();
             App.$gameArea.fadeIn();
             
-            $('#panel-content').html(App.$templateQuestionGame); 
+            $('#panel-content').html(App.$templateQuestionGame).hide();
+            $('#panel-content').fadeIn();
 
             // Re-enable the ability to submit an answer.
             $('#response').prop('disabled', false);            
@@ -722,7 +755,9 @@ jQuery(function($) {
             // If this is not reset, then the user won't be able to submit a new answer.
             App.responded = false; 	            
             
-         }         
+            // Increment the round counter. 
+            currentRound = currentRound + 1;
+         }        
 		},
 	};
 	IO.init();
