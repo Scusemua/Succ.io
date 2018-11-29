@@ -38,7 +38,7 @@ jQuery(function($) {
 				$('#messages').append($('<li>').text(msg));
 			});
 			IO.socket.on('vote-casted', IO.voteCasted);
-			IO.socket.on('all-votes', IO.allVotes);
+			IO.socket.on('all-votes-final', IO.allVotesFinal);
 			/* When the player hits 'enter' while typing in the chat box */
 			$(document).on('submit', '#message-box-form', function() {
 				// Grab the text and verify that it isn't empty or just spaces.
@@ -134,8 +134,8 @@ jQuery(function($) {
 			App[App.myRole].voteCasted(data);
 		},
 		
-		allVotes: function(data) {
-			App[App.myRole].allVotes(data);
+		allVotesFinal: function(data) {
+			App[App.myRole].allVotesFinal(data);
 		}
 	};
 	
@@ -315,9 +315,11 @@ jQuery(function($) {
 			}				
 		},
 		
-		// Returns true if the given string consists of at least one character that isn't a space.
+		// Returns a flag indicating whether or not a string is valid (true indicates validity).
+      // A string is valid if it is less than 1000 characters long and does not solely consist of spaces.
 		verifyText: function(str) {
 			if (str == "") return false;
+         if (str.length > 1000) return false;
 			var flag = false;
 			for (var x = 0; x < str.length; x++) 
 			{
@@ -497,6 +499,10 @@ jQuery(function($) {
 				App.Host.numVotes++;
 				
 				if (App.Host.numVotes == Object.keys(App.Host.roundResponses).length) {
+               console.log("Object.keys(App.Host.points) = " + Object.keys(App.Host.points));
+               console.log("Object.values(App.Host.points) = " + Object.values(App.Host.points));
+               console.log("Object.keys(App.Host.roundResponses) = " + Object.keys(App.Host.roundResponses));
+               console.log("Object.values(App.Host.roundResponses) = " + Object.values(App.Host.roundResponses));
 					var dataToServer = {
 						keysPoints: Object.keys(App.Host.points),
 						valuesPoints: Object.values(App.Host.points),
@@ -509,18 +515,22 @@ jQuery(function($) {
 				}
 			},
 			
-			allVotes: function(data) {
+			allVotesFinal: function(data) {
+            console.log("allVotes() called for host")
 				$('#panel-content').html(App.$templateFinalResults);	
 				
 				for (var winner in data.winners) {
-					console.log(winner, '= ', JSON.stringify(data.winners[winner]));
+					console.log(winner, '=', JSON.stringify(data.winners[winner]));
 				}
 				
 				for (var i = 0; i < data.winners.length; i++) {
 					var elementId = "listElement_" + data.winners[i];
-					var index = data.winners[i];
-					console.log('index: ' + index);
-					var str = JSON.stringify(data.responses[index]);
+					var str = JSON.stringify(data.responses[i]);
+               // If the winning entry was longer than 100, then only display the first 100 characters.
+               if (str.length > 100) {
+                  str = str.substring(0, 100) + "..."
+               }
+               str = str + " [votes received: " + data.maxVotes + "]"
 					console.log('str: ' + str);
 					$('<li id=' + elementId + '>' + str + '</li>').appendTo('#winning-response-list');
 				}				
@@ -641,7 +651,8 @@ jQuery(function($) {
 				// do nothing...
 			},
 			
-			allVotes: function(data) {
+			allVotesFinal: function(data) {
+            console.log("allVotes() called for client/player")
 				$('#panel-content').html(App.$templateFinalResults);	
 				for (var i = 0; i < data.winners.length; i++) {
 					var elementId = "listElement_" + data.winners[i];
@@ -653,5 +664,5 @@ jQuery(function($) {
 		},
 	};
 	IO.init();
-    App.init();
+   App.init();
 }($));

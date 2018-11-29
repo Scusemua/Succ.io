@@ -39,5 +39,5 @@ io.sockets.on('connection', function(socket){
 	});
 });
 
-server.listen(6969);
+// server.listen(6969);
 console.log('Server is running.');
