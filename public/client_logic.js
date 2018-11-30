@@ -78,6 +78,8 @@ jQuery(function($) {
 				return false;
 			});		
 		},
+      
+      gameStates: {"LOBBY":0, "QUESTION":1, "VOTING":2, "WINNERS":3},
 	
 		/**
 		 * The client is successfully connected.
@@ -98,7 +100,6 @@ jQuery(function($) {
 		
 		// Update the game screen such that the UI for the actual game is shown.
 		showGameScreen: function(data) {
-			App.gameStarted = true;
 			App.showGameScreen(data);
 		},
 		
@@ -175,10 +176,9 @@ jQuery(function($) {
 		 * will not actually be submitted should they circumvent the disabled input text box.
 		 */
 		responded: false,
-		
-		/* Flag which indicates whether or not the game has started */
-		gameStarted: false,
-		
+      
+      currentGameState: IO.gameStates.LOBBY, 
+      
 		// This represents the selected response within the voting list.
 		// It is stored as the clientID associated with that response. 
 		// It is updated by selecting different options from the list.
@@ -230,6 +230,8 @@ jQuery(function($) {
 			App.$templateLobby = $('#lobby-template').html();
 			// This is the template which contains the interface for supplying a game number and attempting to connect to the corresponding game.
 			App.$templateJoinGame = $('#join-game-template').html();
+         // Displayed when a player joins mid-game. 
+         App.$templateAwaitingNextRound = $('#game-awaiting-next-round').html();
 			// This is the overall template for the game. It contains the panelContent element.
 			App.$templateGame = $('#game-template').html();
 			// This is the template for displaying the most-voted response at the end of the voting stage.
@@ -286,9 +288,9 @@ jQuery(function($) {
       * (with Start and Join buttons)
       */
      showInitScreen: function() {
-      // Animate the transition.
+         // Animate the transition.
          App.$gameArea.html(App.$templateNickname).hide();
-      App.$gameArea.fadeIn();
+         App.$gameArea.fadeIn();
      },		
 		
 		 
@@ -313,10 +315,17 @@ jQuery(function($) {
 			// Animate the transition.
 			App.$gameArea.html(App.$templateGame).hide();
 			App.$gameArea.fadeIn();
+
+         // Copy in all the socketIDs for the current players to the Host.
+         for (var j = 0; j < data.memberSockets.length; j++) {
+            App.Host.playersParticipating[j] = data.memberSockets[j];
+         }
+         
+         console.warn("App.Host.playersParticipating = " + App.Host.playersParticipating);
+         
+         $('#panel-content').html(App.$templateQuestionGame);
 			
-			$('#panel-content').html(App.$templateQuestionGame);
-			
-			// Populate the list of players.
+			// Populate the list of players in either of the aforementioned cases.
 			for (var i = 0; i < data.memberNames.length; i++) {
 				var elementId = "listElement_" + data.memberSockets[i];
 				$('<li id=' + elementId + '>' + data.memberNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
@@ -339,6 +348,16 @@ jQuery(function($) {
 		
 		// Executes when the voting phase of the game/round begins.
 		votingBegins: function(data) {
+         // Update the game state 
+         App.currentGameState = IO.gameStates.VOTING;         
+         
+         // If client is a player and they joined mid-round, don't do anything. They shouldn't vote.
+         if (new String(App.myRole).valueOf() == new String('Player').valueOf()) {
+            if (App.Player.waitingForNextRound) {
+               return;
+            }
+         }
+         
 			// This is a container within the game template. This houses the question and voting interfaces. We swap between
 			// the two interfaces (which are kept within their own templates) depending on if we are in a question/respone or voting phase of the game.				
 			$('#panel-content').html(App.$templateVoteGame).hide();
@@ -398,8 +417,6 @@ jQuery(function($) {
 			
 			numVotes: 0,
 			
-			gameStarted: false,
-			
 			// Flag to indicate if a new game is starting.
 			// Used when game ends and players start new game
 			// without refreshing the browser windows.
@@ -407,6 +424,10 @@ jQuery(function($) {
 
 			// Keeps track of the number of players who have jonined the game
 			numPlayersInRoom: 0,
+         
+         // The socket ID's of players who were present at the beginning of the round
+         // and who haven't left, meaning they're still participating in the game.
+         playersParticipating: [],
 			 
 			// Handler for the 'Start' button on the title screen.
 			onCreateClick: function () {
@@ -420,6 +441,7 @@ jQuery(function($) {
 				App.mySocketId = data.mySocketId;
 				App.myRole = 'Host';
 				App.Host.numPlayersInRoom = 1;
+            App.Host.numPlayersAtStartOfRound = 1;
 
 				App.Host.displayNewGameScreen();
 			},
@@ -434,11 +456,13 @@ jQuery(function($) {
             // Decrement the number of players in the room.
             App.Host.numPlayersInRoom = App.Host.numPlayersInRoom - 1;
             
-            console.warn("[HOST]: Object.keys(App.Host.roundResponses).length = " + Object.keys(App.Host.roundResponses).length);
-            console.warn("[HOST]: App.Host.numPlayersInRoom = " + App.Host.numPlayersInRoom)
+            App.Host.playersParticipating = 
+               App.Host.playersParticipating.filter(function(e) {
+                  return e != data
+               });
             
 				// Everybody has submitted a response. 
-				if (Object.keys(App.Host.roundResponses).length >= App.Host.numPlayersInRoom) {
+				if (Object.keys(App.Host.roundResponses).length >= App.Host.playersParticipating.length) {
 					var d = {
 						keys: Object.keys(App.Host.roundResponses),
 						values: Object.values(App.Host.roundResponses),
@@ -459,18 +483,21 @@ jQuery(function($) {
 				App.$hostStartBtnArea.html(App.$templateHostStartBtn);
 
 				// Show the gameID / room ID on the screen.
-				$('#gameCode').text('Room #: ' + App.gameId);
-				App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
+				$('#gameCode').html('<p style="font-size:64px">Room #: ' + App.gameId + '</p>');
+				//App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
 				
 				var elementId = "listElement_" + App.mySocketId;
 				$('<li id=' + elementId + '>' + App.Player.myName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
 			},	
 			
 			onStartClick: function() {
-				if (App.gameStarted) {
+            // If the game has already been started, then do nothing...
+				if (App.currentGameState != IO.gameStates.LOBBY) {
 					return false;
 				}
-				App.gameStarted = true;
+            // Update the game state.
+				App.currentGameState = IO.gameStates.QUESTION;
+            
 				// Tell the server that the host clicked start.
 				// App.$gameArea.html(App.$templateActualGame);
 				var intervalId;
@@ -487,7 +514,7 @@ jQuery(function($) {
 						// Tell the server that the game is starting.
 						IO.socket.emit('game-starting', App.gameId);
 						App.$hostStartBtnArea.hide();
-						$('#gameCode').hide();
+						// $('#gameCode').hide();
 						clearInterval(intervalId);
 					}
 				}, 1000)
@@ -500,7 +527,7 @@ jQuery(function($) {
 				App.Host.roundResponses[data.playerId] = data.response;
 				
 				// Everybody has submitted a response. 
-				if (Object.keys(App.Host.roundResponses).length == App.Host.numPlayersInRoom) {
+				if (Object.keys(App.Host.roundResponses).length == App.Host.playersParticipating.length) {
 					var d = {
 						keys: Object.keys(App.Host.roundResponses),
 						values: Object.values(App.Host.roundResponses),
@@ -517,6 +544,7 @@ jQuery(function($) {
 			 * @param data {{playerName: string, gameId: int, mySocketId: int}}
 			 */
 			playerJoinedRoom : function(data) {
+            console.warn("[HOST] Player joined.");
 				var elementId = "listElement_" + data.playerId;
 				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
 				App.Host.numPlayersInRoom++;
@@ -533,7 +561,7 @@ jQuery(function($) {
 				}
 				App.Host.numVotes++;
 				
-				if (App.Host.numVotes >= Object.keys(App.Host.roundResponses).length) {
+				if (App.Host.numVotes >= App.Host.playersParticipating.length) {
 					var dataToServer = {
 						keysPoints: Object.keys(App.Host.points),
 						valuesPoints: Object.values(App.Host.points),
@@ -551,6 +579,9 @@ jQuery(function($) {
          // server will emit an event starting the next round.
 			allVotesFinal: function(data) {
             console.warn("allVotesFinal() [HOST]");
+            // Update game state 
+            App.currentGameState = IO.gameStates.WINNERS;
+            
             // Host Method 
 				$('#panel-content').html(App.$templateFinalResults).hide();
             $('#panel-content').fadeIn();
@@ -575,6 +606,8 @@ jQuery(function($) {
          nextRound: function(data) {
             console.log("[HOST] Starting next round...");
             
+            console.warn("data.currentPlayers = " + data.currentPlayers);
+            
             $('#panel-content').html(App.$templateQuestionGame).hide();
             $('#panel-content').fadeIn();
             
@@ -591,11 +624,22 @@ jQuery(function($) {
             // Increment the round counter. 
             App.currentRound = App.currentRound + 1;
             
+            // Clear the participating players list and repopulate it with data received from the server.
+            App.Host.playersParticipating = [];
+            for (var i = 0; i < data.currentPlayers.length; i++) {
+               App.Host.playersParticipating[i] = data.currentPlayers[i]; 
+            }
+            
+            console.warn("App.Host.playersParticipating = " + App.Host.playersParticipating);
+            
             // Make sure to clear the roundResponses dictionary/map as well.
             App.Host.roundResponses = {}   
 
             // Clear the points dictionary/map. 
             App.Host.points = {}
+            
+            // Update the game state. 
+            App.currentGameState = IO.gameStates.QUESTION;
          },
 		},
 		 
@@ -621,6 +665,8 @@ jQuery(function($) {
 				App.$gameArea.html(App.$templateJoinGame).hide();
 				App.$gameArea.fadeIn();
 			},
+         
+         waitingForNextRound:  false,
 			 
 			// Handler for when the Player entered their name and gameID
 			// and then proceeded to click 'Start'.
@@ -676,14 +722,14 @@ jQuery(function($) {
          // the player and not the host.
 			displayGameScreen: function(data) {
             // If the game hasn't started yet, then just display the lobby/chat room. 
-            if (!App.gameStarted) {
+            if (App.currentGameState == IO.gameStates.LOBBY) {
                // Fill the game area with the appropriate HTMl
                App.$gameArea.html(App.$templateLobby).hide();
                App.$gameArea.fadeIn();
 
                // Show the gameID / room ID on the screen.
-               $('#gameCode').text('Room #: ' + App.gameId);
-               App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
+               $('#gameCode').html('<p style="font-size:64px; vertical-align: middle">Room #: ' + App.gameId + '</p>');
+               //App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
             }
             // Else, display the actual game screen so the user can participate. 
             else {
@@ -691,9 +737,12 @@ jQuery(function($) {
                App.$gameArea.html(App.$templateLobby).hide();
                App.$gameArea.fadeIn();
                
-               $('#panel-content').html(App.$templateQuestionGame);
+               $('#panel-content').html(App.$templateAwaitingNextRound);
                
-               $('#gameCode').hide();
+               // $('#gameCode').hide();
+
+               // Set this flag to true so that the UI doesn't update until the next round. 
+               App.Player.waitingForNextRound = true;
             }
 				
 				// Add each player already in the lobby (including THIS client) to the players waiting list.
@@ -735,7 +784,9 @@ jQuery(function($) {
 			
          // This function is triggered by an event emitted by the server once the server is finished
          // tallying all of the votes and whatnot. Ten seconds after the server emits that event, the
-         // server will emit an event starting the next round.         
+         // server will emit an event starting the next round.  
+         //
+         // A player who is waiting for the next round will still see this UI since they cannot interact with it.
 			allVotesFinal: function(data) {
             console.warn("allVotesFinal() [PLAYER]");
             
@@ -771,7 +822,10 @@ jQuery(function($) {
             
             // Reset the flag indicating that the user has responded. 
             // If this is not reset, then the user won't be able to submit a new answer.
-            App.responded = false; 	            
+            App.responded = false; 	
+
+            // Set this to false (it may or may not have been set to true).
+            App.Player.waitingForNextRound = false;
          }        
 		},
 	};

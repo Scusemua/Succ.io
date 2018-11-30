@@ -4,9 +4,7 @@ var gameSocket;
 // TO-DO:
 // 1.) Player joining mid-game 
       // UI doesn't update immediately (until round ends or goes to voting or something)
-// 2.) Host leaves game so need to create new host 
-// 3.) Rounds aren't working 
-      // Goes to next round, but doesn't reset all submissions/votes for some reason? 
+// 2.) Host leaves game so need to create new host    
 // 4.) Player leaving mid-round before voting 
       // No longer need their vote 
       // If they've already voted, remove their response? 
@@ -23,8 +21,8 @@ exports.initGame = function(sio, socket) {
 	gameSocket.emit('connected', { message: "You are connected!"});	// Emtis event to client notiftying client that they successfully connected.
 	
 	// Host Events
-	gameSocket.on('hostCreateNewGame', hostCreateNewGame);		// Fires when a client creates a nwe game.
-	gameSocket.on('game-starting', gameStarting);				// Fires when the game is beginning (host pressed Start).
+	gameSocket.on('hostCreateNewGame', hostCreateNewGame)     // Fires when a client creates a nwe game.
+	gameSocket.on('game-starting', gameStarting);	         // Fires when the game is beginning (host pressed Start).
 	gameSocket.on('response', function(data) {					// Fires when a player sends a response to the server from the actual game.
 		io.in(data.gameId).emit('response', data);
 	});
@@ -76,7 +74,6 @@ function gameStarting(gameId) {
 		memberNames.push(io.sockets.connected[clientId].nickname);
 	}
 	
-	// Data that isn't to go to all the other clients	
 	var personalData = {
 		memberNames: memberNames,
 		memberSockets: memberSockets,
@@ -140,20 +137,35 @@ function allVotesReceived(data) {
       // If there was a tie, then winners will have more than one entry.
 		winners.push(maxId);
 	}
+   
+   // Create a list of the IDs of all the players in the room and 
+   // send it to the host so they know how many respones are needed and whatnot.
+   var players = [];
+   var room = gameSocket.adapter.rooms[gameId];
+   var clients = room.sockets;
+	for (var clientId in clients) {
+		players.push(clientId);
+	}
+   
    // console.warn("winners = " + winners);
    // console.warn("data.valuesResponses = " + data.valuesResponses)
 	var finalData = {
 		winners: winners,
 		responses: data.valuesResponses,
-      maxVotes: max 
+      maxVotes: max, 
 	}
+   
+   // This goes to the host only.
+   var nextRoundData = {
+      currentPlayers: players
+   }
 	
 	io.in(data.gameId).emit('all-votes-final', finalData);
    
    // TODO: CHANGE THE '1500' TO '10000'
    // IT IS '1500' TO SPEED UP TESTING 
    setTimeout(function() {
-      io.in(data.gameId).emit('next-round', finalData);
+      io.in(data.gameId).emit('next-round', nextRoundData);
    }, 1500);
 }
 

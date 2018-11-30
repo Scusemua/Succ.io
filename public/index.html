@@ -10,13 +10,14 @@
 	<link rel="stylesheet" type="text/css" href="css/styles.css" />
 	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
 	<body>	
-<!--[if lt IE 7]>
-<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-<![endif]--> 	
 		<div id="parent">
 			<div class="container banner-container" id="main-banner">
 				<p>Succ.io</p>
 			</div>  			
+         
+			<div class="container-fluid"> 
+				<div id="gameCode"></div>
+         </div>         
 		
 			<!-- This is where templates will be used -->
 			<div id="gameArea">
@@ -72,8 +73,6 @@
 		</script>	
 		
 		<script id="lobby-template" type="text/template">
-			<div class="container-fluid"> 
-				<div id="gameCode">Error!</div>
 			<div class="container-fluid">
 				<div class="row">
 					<div class="col-lg-9 col-md-9 col-sm-6">
@@ -161,6 +160,12 @@
 			<input type="text" class="form-control" id="response" placeholder="Type your response here." autocomplete="off">								
 		</form>		
 	</script>
+   
+   <script id="game-awaiting-next-round" type="text/template">
+      <div>
+         <h1 id="waiting_text">Waiting for round to end...</h2>
+      </div>
+   </script>
 	
 	<!-- This tempalte is used to display the voting interface after all responses have been submitted during the game. -->
 	<script id="game-voting-template" type="text/template">
