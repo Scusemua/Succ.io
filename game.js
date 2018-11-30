@@ -1,6 +1,8 @@
 var io;
 var gameSocket;
 
+var questions;
+
 // TO-DO:
 // 1.) Player joining mid-game 
       // UI doesn't update immediately (until round ends or goes to voting or something)
@@ -18,8 +20,18 @@ var gameSocket;
 exports.initGame = function(sio, socket) {
 	io = sio;
 	gameSocket = socket;
+   questions = [];
 	gameSocket.emit('connected', { message: "You are connected!"});	// Emtis event to client notiftying client that they successfully connected.
 	
+   var lineReader = require('readline').createInterface({
+      input: require('fs').createReadStream('questions.txt')
+   });
+
+   lineReader.on('line', function (line) {
+      questions.push(line);
+   }); 
+   
+   
 	// Host Events
 	gameSocket.on('hostCreateNewGame', hostCreateNewGame)     // Fires when a client creates a nwe game.
 	gameSocket.on('game-starting', gameStarting);	         // Fires when the game is beginning (host pressed Start).
@@ -35,6 +47,12 @@ exports.initGame = function(sio, socket) {
 	gameSocket.on('playerConfirmedName', playerConfirmName);	// Fires when a player confirms their nickname so we can add the nickname to the socket.
 	// gameSocket.on('playerAnswer', playerAnswer);
 	// gameSocket.on('playerRestart', playerRestart);
+}
+
+// Randomly select a question from the questions array and return it. 
+function selectQuestion() {
+   var index = Math.floor(Math.random() * (questions.length + 1));
+   return questions[index];
 }
 
 ///
@@ -74,10 +92,13 @@ function gameStarting(gameId) {
 		memberNames.push(io.sockets.connected[clientId].nickname);
 	}
 	
+   var question = selectQuestion();
+   
 	var personalData = {
 		memberNames: memberNames,
 		memberSockets: memberSockets,
-		gameId: gameId
+		gameId: gameId,
+      question: question
 	}
 	
 	// Tell all of the players that the game has started.
@@ -157,10 +178,13 @@ function allVotesReceived(data) {
       maxVotes: max, 
 	}
    
+   var question = selectQuestion();
+   
    // This goes to the host only.
    var nextRoundData = {
       currentPlayersIDs: playersSocketIDs,
-      currentPlayerNames: playerNames
+      currentPlayerNames: playerNames,
+      question: question
    }
 	
 	io.in(data.gameId).emit('all-votes-final', finalData);

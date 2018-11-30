@@ -1,7 +1,7 @@
 ;
 jQuery(function($) {
 	'use strict';
-	
+   
     /**
      * All the code relevant to Socket.IO is collected in the IO namespace.
      *
@@ -15,7 +15,7 @@ jQuery(function($) {
          */		
 		init: function() {
 			IO.socket = io.connect();
-			IO.bindEvents();
+			IO.bindEvents();      
 		},
 		
 		/**
@@ -181,6 +181,9 @@ jQuery(function($) {
 		// It is stored as the clientID associated with that response. 
 		// It is updated by selecting different options from the list.
 		selectedId: '',
+      
+      // Current question.
+      question: '',
 		
 		//
 		//
@@ -327,7 +330,10 @@ jQuery(function($) {
 			for (var i = 0; i < data.memberNames.length; i++) {
 				var elementId = "listElement_" + data.memberSockets[i];
 				$('<li id=' + elementId + '>' + data.memberNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
-			}				
+			}			
+         
+         App.question = data.question;
+         $('#question-text').text(App.question);             
 		},
 		
 		// Returns a flag indicating whether or not a string is valid (true indicates validity).
@@ -364,6 +370,8 @@ jQuery(function($) {
          // Make sure the vote button is enabled. If this is not the first 
          // round, then it will be disabled from the last round (I think?)
          $('#btnConfirmVote').prop("disabled", false);
+         
+         $('#question-voting').text(App.question); 
          
          var list = $('#response-list');
 			
@@ -586,7 +594,9 @@ jQuery(function($) {
             // Host Method 
 				$('#panel-content').html(App.$templateFinalResults).hide();
             $('#panel-content').fadeIn();
-				
+            
+            $('#question-results').text(App.question); 
+            
 				for (var winner in data.winners) {
 					console.log(winner, '=', JSON.stringify(data.winners[winner]));
 				}
@@ -641,6 +651,9 @@ jQuery(function($) {
             
             // Update the game state. 
             App.Host.currentGameState = IO.gameStates.QUESTION;
+            
+            App.question = data.question;
+            $('#question-text').text(App.question);            
          },
 		},
 		 
@@ -785,6 +798,8 @@ jQuery(function($) {
 				$('#panel-content').html(App.$templateFinalResults).hide();
             $('#panel-content').fadeIn();
 				
+            $('#question-results').text(App.question);             
+            
 				for (var i = 0; i < data.winners.length; i++) {
 					var elementId = "listElement_" + data.winners[i];
 					var str = JSON.stringify(data.responses[i]);
@@ -823,6 +838,9 @@ jQuery(function($) {
 
             // Set this to false (it may or may not have been set to true).
             App.Player.waitingForNextRound = false;
+            
+            App.question = data.question;
+            $('#question-text').text(App.question); 
          }        
 		},
 	};
