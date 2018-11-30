@@ -140,11 +140,13 @@ function allVotesReceived(data) {
    
    // Create a list of the IDs of all the players in the room and 
    // send it to the host so they know how many respones are needed and whatnot.
-   var players = [];
-   var room = gameSocket.adapter.rooms[gameId];
+   var playersSocketIDs = [];
+   var playerNames = [];
+   var room = gameSocket.adapter.rooms[data.gameId];
    var clients = room.sockets;
 	for (var clientId in clients) {
-		players.push(clientId);
+		playersSocketIDs.push(clientId);
+      playerNames.push(io.sockets.connected[clientId].nickname);
 	}
    
    // console.warn("winners = " + winners);
@@ -157,7 +159,8 @@ function allVotesReceived(data) {
    
    // This goes to the host only.
    var nextRoundData = {
-      currentPlayers: players
+      currentPlayersIDs: playersSocketIDs,
+      currentPlayerNames: playerNames
    }
 	
 	io.in(data.gameId).emit('all-votes-final', finalData);

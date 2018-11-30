@@ -483,7 +483,7 @@ jQuery(function($) {
 				App.$hostStartBtnArea.html(App.$templateHostStartBtn);
 
 				// Show the gameID / room ID on the screen.
-				$('#gameCode').html('<p style="font-size:64px">Room #: ' + App.gameId + '</p>');
+				$('#gameCode').html('<p style="font-size:64px; text-align: center">RoomID: ' + App.gameId + '</p>');
 				//App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
 				
 				var elementId = "listElement_" + App.mySocketId;
@@ -547,6 +547,7 @@ jQuery(function($) {
             console.warn("[HOST] Player joined.");
 				var elementId = "listElement_" + data.playerId;
 				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+            $('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
 				App.Host.numPlayersInRoom++;
 			},
 
@@ -606,7 +607,7 @@ jQuery(function($) {
          nextRound: function(data) {
             console.log("[HOST] Starting next round...");
             
-            console.warn("data.currentPlayers = " + data.currentPlayers);
+            console.warn("data.currentPlayersIDs = " + data.currentPlayersIDs);
             
             $('#panel-content').html(App.$templateQuestionGame).hide();
             $('#panel-content').fadeIn();
@@ -626,8 +627,8 @@ jQuery(function($) {
             
             // Clear the participating players list and repopulate it with data received from the server.
             App.Host.playersParticipating = [];
-            for (var i = 0; i < data.currentPlayers.length; i++) {
-               App.Host.playersParticipating[i] = data.currentPlayers[i]; 
+            for (var i = 0; i < data.currentPlayersIDs.length; i++) {
+               App.Host.playersParticipating[i] = data.currentPlayersIDs[i]; 
             }
             
             console.warn("App.Host.playersParticipating = " + App.Host.playersParticipating);
@@ -723,33 +724,47 @@ jQuery(function($) {
 			displayGameScreen: function(data) {
             // If the game hasn't started yet, then just display the lobby/chat room. 
             if (App.currentGameState == IO.gameStates.LOBBY) {
+               console.warn("[PLAYER] displayGameScreen(): Displaying lobby...");
                // Fill the game area with the appropriate HTMl
                App.$gameArea.html(App.$templateLobby).hide();
                App.$gameArea.fadeIn();
 
                // Show the gameID / room ID on the screen.
-               $('#gameCode').html('<p style="font-size:64px; vertical-align: middle">Room #: ' + App.gameId + '</p>');
+               $('#gameCode').html('<p style="font-size:64px; text-align: center">RoomID: ' + App.gameId + '</p>');
                //App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
             }
             // Else, display the actual game screen so the user can participate. 
             else {
                // Fill the game area with the appropriate HTMl
-               App.$gameArea.html(App.$templateLobby).hide();
+               App.$gameArea.html(App.$templateGame).hide();
                App.$gameArea.fadeIn();
                
-               $('#panel-content').html(App.$templateAwaitingNextRound);
+               // If the players are answering the question, then this player can also answer the question.
+               // Otherwise, wait until the next game.
+               if (App.currentGameState == IO.gameStates.QUESTION) {
+                  $('#panel-content').html(App.$templateQuestionGame);
+
+                  // Set this flag to true so that the UI doesn't update until the next round. 
+                  App.Player.waitingForNextRound = false;                  
+               }
+               else {
+                  $('#panel-content').html(App.$templateAwaitingNextRound);
+                  
+                  // Set this flag to true so that the UI doesn't update until the next round. 
+                  App.Player.waitingForNextRound = true;
+               }
                
                // $('#gameCode').hide();
-
-               // Set this flag to true so that the UI doesn't update until the next round. 
-               App.Player.waitingForNextRound = true;
             }
 				
+            console.warn("[PLAYER] displayGameScreen(): data.memberNames = " + data.memberNames);
+            
 				// Add each player already in the lobby (including THIS client) to the players waiting list.
 				// We animate the additions so it looks nice.
 				for (var i = 0; i < data.memberNames.length; i++) {
 					var elementId = "listElement_" + data.memberSockets[i];
 					$('<li id=' + elementId + '>' + data.memberNames[i] + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+               $('<li id=' + elementId + '>' + data.memberNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
 				}				
 			},
 			
@@ -767,6 +782,7 @@ jQuery(function($) {
 			playerJoinedRoom : function(data) {
 				var elementId = "listElement_" + data.playerId;
 				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+            $('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
 			},			
          
          // Executes when a player disconnects from the game. Removes them from the player list.
@@ -817,6 +833,12 @@ jQuery(function($) {
             $('#panel-content').html(App.$templateQuestionGame).hide();
             $('#panel-content').fadeIn();
 
+            for (var i = 0; i < data.currentPlayerNames.length; i++) {
+					var elementId = "listElement_" + data.currentPlayersIDs[i];
+					$('<li id=' + elementId + '>' + data.currentPlayerNames[i] + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+               $('<li id=' + elementId + '>' + data.currentPlayerNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
+				}	
+            
             // Re-enable the ability to submit an answer.
             $('#response').prop('disabled', false);            
             
