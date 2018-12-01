@@ -109,6 +109,9 @@ jQuery(function($) {
 		*/
 		error : function(data) {
 			alert(data.message);
+         
+         // Re-enable the join button in case the error was bc join failed 
+         $('btnConfirmGameId').prop("disabled", false);
 		},
 
 		// Executes when a player joins a game room.
@@ -120,7 +123,12 @@ jQuery(function($) {
 		// The data passed to the function is the socket id of the disconnected client. This
 		// is used to remove that list element from the players waiting list.
 		playerDisconnected: function(data) {
-			App[App.myRole].playerDisconnected(data);
+         if (App[App.myRole] != null) {
+            App[App.myRole].playerDisconnected(data);            
+         }
+         else {
+            console.warn("App[App.myRole] is null");
+         }
 		},		
 		
 		// Executes when a player responds to a question in-game.
@@ -495,10 +503,14 @@ jQuery(function($) {
 				//App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
 				
 				var elementId = "listElement_" + App.mySocketId;
-				$('<li id=' + elementId + '>' + App.Player.myName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+				$('<li id=' + elementId + ' style="font-weight:bold">' + App.Player.myName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+            
+            $('#messages').append($('<li style="color: #676767">').text("You are the HOST. Press \"Start\" to start the game."));
 			},	
 			
 			onStartClick: function() {
+            console.warn("[HOST]: Start button clicked.");
+            console.warn("[HOST]: Game State: " + App.Host.currentGameState);
             // If the game has already been started, then do nothing...
 				if (App.Host.currentGameState != IO.gameStates.LOBBY) {
 					return false;
@@ -516,7 +528,7 @@ jQuery(function($) {
 					}
 					// Emit a countdown to the server which will then start displaying the count-down in the chat to the users.
 					IO.socket.emit('countdown', data);
-					App.counter = App.counter - 100;
+					App.counter = App.counter - 1;
 					// Display 'counter' wherever you want to display it.
 					if (App.counter < 0) {
 						// Tell the server that the game is starting.
@@ -557,6 +569,8 @@ jQuery(function($) {
 				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
             $('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
 				App.Host.numPlayersInRoom++;
+            
+            $('#messages').append($('<li style="color: #7c89bd">').text(data.playerName + " connected to the game."));
 			},
 
 			voteCasted: function(data) {
@@ -711,12 +725,18 @@ jQuery(function($) {
 			
 			// Attempts to join the game with the game id entered by the user.
 			onJoinGameConfirmClick: function(data) {
+            // Disable the join button so they cannot spam it, causing multiple clients to be created and connect...
+             $('btnConfirmGameId').prop("disabled", true);
+             
 				var gameId = $('#inputGameId').val();
 				
 				var isnum = /^\d+$/.test(gameId);
 				
 				if (!isnum) {
 					window.alert("Please only enter numbers [0-9] in the Game ID input box.");
+               
+               // Re-enable the "join" button
+               $('btnConfirmGameId').prop("disabled", false);
                return;
 				}
 
@@ -746,14 +766,19 @@ jQuery(function($) {
 				// We animate the additions so it looks nice.
 				for (var i = 0; i < data.memberNames.length; i++) {
 					var elementId = "listElement_" + data.memberSockets[i];
-					$('<li id=' + elementId + '>' + data.memberNames[i] + '</li>').appendTo('#players-waiting-list').hide().slideDown();
-               $('<li id=' + elementId + '>' + data.memberNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
+               // If we are adding THIS player's name to the list, bold it.
+               if (new String(data.memberSockets[i]).valueOf() == new String(App.mySocketId).valueOf()) {
+                  $('<li id=' + elementId + ' style="font-weight:bold">' + data.memberNames[i] + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+                  $('<li id=' + elementId + ' style="font-weight:bold">' + data.memberNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
+                  
+               }
+               else {
+                  $('<li id=' + elementId + '>' + data.memberNames[i] + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+                  $('<li id=' + elementId + '>' + data.memberNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
+               }
 				}			
 
-            if (App.myRole != "Host")
-            {
-               $('#messages').append($('<li>').text("[SERVER] Waiting for host to start game or current round to end..."));
-            }
+            $('#messages').append($('<li style="color: #676767">').text("Waiting for host to start game or current round to end..."));
 			},
 			
 			// Fired when this client successfully joins a room.
@@ -771,6 +796,8 @@ jQuery(function($) {
 				var elementId = "listElement_" + data.playerId;
 				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
             $('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
+            
+            $('#messages').append($('<li style="color: #7c89bd">').text(data.playerName + " connected to the game."));
 			},			
          
          // Executes when a player disconnects from the game. Removes them from the player list.

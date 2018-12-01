@@ -193,7 +193,7 @@ function allVotesReceived(data) {
    // IT IS '1500' TO SPEED UP TESTING 
    setTimeout(function() {
       io.in(data.gameId).emit('next-round', nextRoundData);
-   }, 1500);
+   }, 7500);
 }
 
 ///
