@@ -1,3 +1,29 @@
+$.fn.extend({
+  animateCss: function(animationName, callback) {
+    var animationEnd = (function(el) {
+      var animations = {
+        animation: 'animationend',
+        OAnimation: 'oAnimationEnd',
+        MozAnimation: 'mozAnimationEnd',
+        WebkitAnimation: 'webkitAnimationEnd',
+      };
+
+      for (var t in animations) {
+        if (el.style[t] !== undefined) {
+          return animations[t];
+        }
+      }
+    })(document.createElement('div'));
+
+    this.addClass('animated ' + animationName).one(animationEnd, function() {
+      $(this).removeClass('animated ' + animationName);
+
+      if (typeof callback === 'function') callback();
+    });
+
+    return this;
+  },
+});
 ;
 jQuery(function($) {
 	'use strict';
@@ -274,7 +300,10 @@ jQuery(function($) {
 				if (App.selectedId === '') {
 					return;
 				}
-				$('#btnConfirmVote').prop("disabled",true);
+				
+            $('#btnConfirmVote').prop("disabled", true);
+            $('#e_' + App.selectedId).css("color", '#51bc21');
+            
 				console.log(App.selectedId);
 				var data = {
 					gameId: App.gameId,
@@ -298,8 +327,7 @@ jQuery(function($) {
       */
      showInitScreen: function() {
          // Animate the transition.
-         App.$gameArea.html(App.$templateNickname).hide();
-         App.$gameArea.fadeIn();
+         App.$gameArea.html(App.$templateNickname);
      },		
 		
 		 
@@ -510,18 +538,22 @@ jQuery(function($) {
 			
 			onStartClick: function() {
             console.warn("[HOST]: Start button clicked.");
-            console.warn("[HOST]: Game State: " + App.Host.currentGameState);
-            // If the game has already been started, then do nothing...
-				if (App.Host.currentGameState != IO.gameStates.LOBBY) {
-					return false;
-				}
+            
+            // Disable the start button so that it cannot be clicked anymore...
+				$('#btnHostStartGame').prop('disabled', true);
+            
             // Update the game state.
 				App.Host.currentGameState = IO.gameStates.QUESTION;
             
 				// Tell the server that the host clicked start.
 				// App.$gameArea.html(App.$templateActualGame);
 				var intervalId;
-				IO.socket.emit('chat message', "HOST STARTED THE GAME - COUNTING DOWN");
+            
+            App.$hostStartBtnArea.hide();
+            
+				// IO.socket.emit('chat message', "HOST STARTED THE GAME - COUNTING DOWN");
+            IO.socket.emit('game-starting', App.gameId);
+            /*
 				interval: intervalId = setInterval(function() {
 					var data = {
 						count: App.counter
@@ -537,7 +569,7 @@ jQuery(function($) {
 						// $('#gameCode').hide();
 						clearInterval(intervalId);
 					}
-				}, 1000)
+				}, 1000) */
 			},
 			
 			/* When a player enters and submits a response to a question, an event is fired and this method is executed by the host (server-side). */
@@ -566,8 +598,8 @@ jQuery(function($) {
 			playerJoinedRoom : function(data) {
             console.warn("[HOST] Player joined.");
 				var elementId = "listElement_" + data.playerId;
-				$('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
-            $('<li id=' + elementId + '>' + data.playerName + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
+				$('<li id=' + elementId + ' class="fadeInUp animated fast">' + data.playerName + '</li>').appendTo('#players-waiting-list'); //.hide().slideDown();
+            $('<li id=' + elementId + ' class="fadeInUp animated fast">' + data.playerName + '</li>').appendTo('#players-waiting-list-ingame'); //.hide().slideDown();
 				App.Host.numPlayersInRoom++;
             
             $('#messages').append($('<li style="color: #7c89bd">').text(data.playerName + " connected to the game."));
@@ -624,7 +656,7 @@ jQuery(function($) {
                }
                str = str + " <strong>[votes received: " + data.maxVotes + "]</strong>"
 					console.log('str: ' + str);
-					$('<li id=' + elementId + '>' + str + '</li>').appendTo('#winning-response-list');
+					$('<li id=' + elementId + ' class="fadeIn animated faster">' + str + '</li>').appendTo('#winning-response-list');
 				}				
 			},	
 
@@ -716,6 +748,7 @@ jQuery(function($) {
 				
 				// Set the appropriate properties for the current player.
 				App.Player.myName = playerName;	
+            
 				// IO.socket.nickname = playerName;
 				IO.socket.emit('playerConfirmName', playerName);
 					
@@ -836,7 +869,7 @@ jQuery(function($) {
                }
                str = str + " <strong>[votes received: " + data.maxVotes + "]</strong>"
 					// console.log('str: ' + str);
-					$('<li id=' + elementId + '>' + str + '</li>').appendTo('#winning-response-list');
+					$('<li id=' + elementId + ' class="fadeIn animated faster">' + str + '</li>').appendTo('#winning-response-list');
 				}            
 			},
          

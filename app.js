@@ -20,13 +20,13 @@ app.use(express.static(path.join(__dirname + '/public')));
 // Listen for events on the server. 
 io.sockets.on('connection', function(socket){
 	var address = socket.request.connection.remoteAddress;
-	console.log('A Client has connected from ' + address);
+	console.log('Client [ID: ' + socket.id + '] has connected from ' + address);
 	game.initGame(io, socket);
 	// When a player disconnects, we need to tell the clients
 	// so that, if that player was in their room, they can be
 	// removed from lists and whatnot.
-	socket.on('disconnect', function() {
-		console.log('A Client has disconnected.');
+	socket.on('disconnect', function(reason) {
+		console.log('Client ' + socket.nickname + ' ' + '[ID: ' + socket.id + '] has disconnected because ' + reason);
 		io.emit('player-disconnected', socket.id);
 	});
 	socket.on('chat message', function(msg) {

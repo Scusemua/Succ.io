@@ -44,7 +44,7 @@ exports.initGame = function(sio, socket) {
 	
 	// Player Events
 	gameSocket.on('playerJoinGame', playerJoinGame);			// Fires when a player joins the game room.
-	gameSocket.on('playerConfirmedName', playerConfirmName);	// Fires when a player confirms their nickname so we can add the nickname to the socket.
+	gameSocket.on('playerConfirmName', playerConfirmName);	// Fires when a player confirms their nickname so we can add the nickname to the socket.
 	// gameSocket.on('playerAnswer', playerAnswer);
 	// gameSocket.on('playerRestart', playerRestart);
 }
