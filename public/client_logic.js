@@ -365,14 +365,18 @@ jQuery(function($) {
 			App.$gameArea.html(App.$templateGame).hide();
 			App.$gameArea.fadeIn();
 
-         if (App.myRole == "Host") {
-            // Copy in all the socketIDs for the current players to the Host.
-            for (var j = 0; j < data.memberSockets.length; j++) {
-               App.Host.playersParticipating[j] = data.memberSockets[j];
-            }
-            
-            console.warn("App.Host.playersParticipating = " + App.Host.playersParticipating);            
+         // Copy in all the socketIDs for the current players to the Host.
+         for (var j = 0; j < data.memberSockets.length; j++) {
+            App.Host.playersParticipating[j] = data.memberSockets[j];
          }
+         
+         for (var index = 0; index < data.pointsKeys.length; index++) {
+            var currentKey = data.pointsKeys[index];
+            var currentValue = data.pointsValues[index];
+            App.points[currentKey] = currentValue;
+         }
+         
+         console.warn("App.Host.playersParticipating = " + App.Host.playersParticipating);  
          
          $('#panel-content').html(App.$templateQuestionGame);
 			
@@ -636,13 +640,17 @@ jQuery(function($) {
             // Update game state 
             App.Host.currentGameState = IO.gameStates.WINNERS;
             
+            // console.warn("Object.keys(App.points): " + Object.keys(App.points));
+            // console.warn("Object.values(App.points): " + Object.values(App.points));
+            
+            // Grab all of the updated points.
             App.points = {};
             for (var i = 0; i < data.pointsKeys.length; i++) {
                App.points[data.pointsKeys[i]] = data.pointsValues[i];
             }
             
-            console.warn("data.pointsKeys = " + data.pointsKeys);
-            console.warn("data.pointsValues = " + data.pointsValues);
+            // console.warn("data.pointsKeys = " + data.pointsKeys);
+            // console.warn("data.pointsValues = " + data.pointsValues);
             
             // Host Method 
 				$('#panel-content').html(App.$templateFinalResults).hide();
@@ -650,19 +658,32 @@ jQuery(function($) {
             
             $('#question-results').text(App.question); 
             
+            // Update the players list to visually show point changes from the round.
 				for (var index = 0; index < data.winners.length; index++) {
                var winner = data.winners[index];
-					console.log(winner, '=', JSON.stringify(data.winners[winner]));
-               var currentText = $('#listElement_' + data.winners[winner].toString()).text();
+               var currentText = $('#listElement_' + winner).text();
                console.warn("currentText = " + currentText);
-               console.warn("data.winners[winner] = " + data.winners[winner]);
+               
                // We want to capture just the user's name from the currentText variable. We need to subtract a certain
                // number of characters from the end. We definitely subtract at least three since we need to subtract the
                // space and the two brackets '[' ']', but we also need to subtract the digits. This, of course, depends 
                // upon the number of digits in the player's point value, so we calculate that here.
-               var lengthOfPointsText = App.points[data.winners[winner]].toString().length + 3;
+               var lengthOfPointsText = -1;
+               if (App.points[winner] == 10) {
+                     // If the winner now has ten points, then that means the current amount they have displayed is 9.
+                     // That is, " [9]". The length of this is 4 total, as the length of '9' is one and the length of all
+                     // the other characters is 3. However, if we compute the length of App.points[winner], then that will 
+                     // be two since the length of '10' is 2. Since ten is not actually displayed right now (nine is), we do
+                     // not want to count both digits of ten. Thus, we add 2 instead of 3 to the length. 
+                     lengthOfPointsText = App.points[winner].toString().length + 2;
+               }
+               else {
+                     lengthOfPointsText = App.points[winner].toString().length + 3;
+               }
+               console.warn("length of points text: " + lengthOfPointsText);
+               console.warn("length of current text: " + currentText.length);
                currentText = currentText.substring(0, currentText.length - lengthOfPointsText);
-               $('#listElement_' + data.winners[winner].toString()).text(currentText + ' [' + App.points[data.winners[winner].toString()] + ']');
+               $('#listElement_' + winner).text(currentText + ' [' + App.points[winner] + ']');
 				}
 				
 				for (var i = 0; i < data.winners.length; i++) {
@@ -878,6 +899,12 @@ jQuery(function($) {
 				
             $('#question-results').text(App.question);             
             
+            // Grab all of the updated points.
+            App.points = {};
+            for (var i = 0; i < data.pointsKeys.length; i++) {
+               App.points[data.pointsKeys[i]] = data.pointsValues[i];
+            }            
+            
 				for (var i = 0; i < data.winners.length; i++) {
 					var elementId = "listElement_" + data.winners[i];
 					var str = JSON.stringify(data.responses[i]);
@@ -888,7 +915,35 @@ jQuery(function($) {
                str = str + " <strong>[votes received: " + data.maxVotes + "]</strong>"
 					// console.log('str: ' + str);
 					$('<li id=' + elementId + ' class="fadeIn animated faster">' + str + '</li>').appendTo('#winning-response-list');
-				}            
+				}         
+
+                        // Update the players list to visually show point changes from the round.
+				for (var index = 0; index < data.winners.length; index++) {
+               var winner = data.winners[index];
+               var currentText = $('#listElement_' + winner).text();
+               console.warn("currentText = " + currentText);
+               
+               // We want to capture just the user's name from the currentText variable. We need to subtract a certain
+               // number of characters from the end. We definitely subtract at least three since we need to subtract the
+               // space and the two brackets '[' ']', but we also need to subtract the digits. This, of course, depends 
+               // upon the number of digits in the player's point value, so we calculate that here.
+               var lengthOfPointsText = -1;
+               if (App.points[winner] == 10) {
+                     // If the winner now has ten points, then that means the current amount they have displayed is 9.
+                     // That is, " [9]". The length of this is 4 total, as the length of '9' is one and the length of all
+                     // the other characters is 3. However, if we compute the length of App.points[winner], then that will 
+                     // be two since the length of '10' is 2. Since ten is not actually displayed right now (nine is), we do
+                     // not want to count both digits of ten. Thus, we add 2 instead of 3 to the length. 
+                     lengthOfPointsText = App.points[winner].toString().length + 2;
+               }
+               else {
+                     lengthOfPointsText = App.points[winner].toString().length + 3;
+               }
+               console.warn("length of points text: " + lengthOfPointsText);
+               console.warn("length of current text: " + currentText.length);
+               currentText = currentText.substring(0, currentText.length - lengthOfPointsText);
+               $('#listElement_' + winner).text(currentText + ' [' + App.points[winner] + ']');
+				}
 			},
          
          nextRound: function(data) {

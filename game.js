@@ -2,7 +2,7 @@ var io;
 var gameSocket;
 
 var questions;
-var points;
+var points = {};  
 
 // TO-DO:
 // 0.) Keep track of score; make game "winnable"
@@ -14,7 +14,6 @@ exports.initGame = function(sio, socket) {
 	io = sio;
 	gameSocket = socket;
    questions = [];
-   points = {};
 	gameSocket.emit('connected', { message: "You are connected!"});	// Emtis event to client notiftying client that they successfully connected.
 	
    var lineReader = require('readline').createInterface({
@@ -71,6 +70,14 @@ function hostCreateNewGame(name) {
 	this.join(thisGameId.toString());
 };
 
+function updatePoints(gameId, value) {
+   points[gameId] = value;
+}
+
+function getPointsForGame(gameId) {
+   return points[gameId];
+}
+
 // Executes when the game begins. Alerts clients that game is starting and sends data to clients with information about the room.
 function gameStarting(gameId) {
 	console.log('Game ' + gameId + ' Started!!!');
@@ -81,16 +88,16 @@ function gameStarting(gameId) {
 	var clients = room.sockets;
 	console.log(clients);
    var pointsForThisRoom = {};
-	for (var index = 0; index < clients.length; index++) {
-      var clientId = clients[index];
+	for (clientId in clients) {
 		memberSockets.push(clientId);
       pointsForThisRoom[clientId.toString()] = 0;
 		memberNames.push(io.sockets.connected[clientId].nickname);
 	}
-   this.points[gameId.toString()] = pointsForThisRoom;   
+   updatePoints(gameId, pointsForThisRoom);
+   // this.points[gameId.toString()] = pointsForThisRoom;   
    
    var question = selectQuestion();
-   
+   console.warn("memberSockets: " + memberSockets);
 	var personalData = {
 		memberNames: memberNames,
 		memberSockets: memberSockets,
@@ -99,7 +106,6 @@ function gameStarting(gameId) {
       pointsKeys: Object.keys(pointsForThisRoom),
       pointsValues: Object.values(pointsForThisRoom)
 	}
-	
 	// Tell all of the players that the game has started.
 	io.in(gameId).emit('game-started', personalData);
 };
@@ -122,14 +128,15 @@ function voteCasted(data) {
 function allVotesReceived(data) {
    // console.warn("allVotesReceived() called...")
    // console.warn("data = " + data)
-	var maxNumVotes = data.valuesVotes[0];      // Maximum value.
+	var maxNumVotes = data.valuesVotes[0];       // Maximum value.
    var maxVotesIndex = 0;
    // console.warn("maxNumVotes = " + maxNumVotes);
-	var maxPlayerId = data.keysVotes[0];        // PlayerID that got the most points.
+	var maxPlayerId = data.keysVotes[0];         // PlayerID that got the most points.
    // console.warn("maxPlayerId = " + maxPlayerId);
 	var tieFound = false;			               // Indicates whether or not we found a tie.
 	var winningSessionIds = [];				      // Array of winners (stored as their IDs).
    var winningResponses = [];                   // Array of winning responses.
+   var gameOver = false;                        // Flag which indicates if the game is over. Will be true if someone wins.
    
    //console.warn("data.keysVotes = " + data.keysVotes);
    //console.warn("data.valuesVotes = " + data.valuesVotes);
@@ -176,6 +183,11 @@ function allVotesReceived(data) {
       var currentId = winningSessionIds[index];
       pointsForThisRoom[currentId.toString()] = pointsForThisRoom[currentId.toString()] + 1;
       console.warn("[GAME " + data.gameId + "] Points for " + currentId + ": " + pointsForThisRoom[currentId.toString()]);      
+      
+      if (pointsForThisRoom[currentId.toString()] == 10) {
+         console.warn("[GAME " + data.gameId + "] We have a winner: " + currentId);
+         gameOver = true;
+      }
    }
    
    // Create a list of the IDs of all the players in the room and 
@@ -184,21 +196,21 @@ function allVotesReceived(data) {
    var playerNames = [];
    var room = gameSocket.adapter.rooms[data.gameId];
    var clients = room.sockets;
-   for (var index = 0; index < clients.length; index++) {
-      var clientId = clients[index];
+   for (var clientId in clients) {
 		playersSocketIDs.push(clientId);
       playerNames.push(io.sockets.connected[clientId].nickname);
 	}
    
-   console.warn("winningSessionIds = " + winningSessionIds);
-   //console.warn("winningResponses = " + winningResponses)
-   //console.warn("maxNumVotes = " + maxNumVotes)
+   // console.warn("winningSessionIds = " + winningSessionIds);
+   // console.warn("winningResponses = " + winningResponses)
+   // console.warn("maxNumVotes = " + maxNumVotes)
 	var finalData = {
 		winners: winningSessionIds,
 		responses: winningResponses,
       maxVotes: data.valuesVotes[maxVotesIndex], 
       pointsKeys: Object.keys(pointsForThisRoom),
-      pointsValues: Object.values(pointsForThisRoom)
+      pointsValues: Object.values(pointsForThisRoom),
+      gameOver: gameOver
 	}
    
    var question = selectQuestion();
@@ -237,9 +249,18 @@ function playerJoinGame(data) {
 	// Look up the room ID.
 	var room = gameSocket.adapter.rooms[data.gameId];
 	
-   var pointsForThisRoom = points[data.gameId.toString()];
-   console.warn("pointsForThisRoom = " + pointsForThisRoom);
-   pointsForThisRoom[sock.id.toString()] = 0;
+   var pointsForThisRoom = getPointsForGame(data.gameId);
+   // If the points for this room dictionary exists, then add an entry for yourself to it.
+   // If it doesn't, then the game hasn't started, and an entry will be created when the host
+   // starts this game. 
+   //
+   // We have to do this check because, if a player joins mid-game, then the server needs to add 
+   // an entry for them. If we solely relied on entries being created when the host started the game,
+   // then anyone who joined mid-game would not have an entry created. 
+   if (pointsForThisRoom != null) {
+      pointsForThisRoom[sock.id.toString()] = 0;
+   }
+   // console.warn("pointsForThisRoom = " + pointsForThisRoom);
    
 	// If the room exists, attempt to join. Otherwise, present error message.
 	if (room != undefined) {
@@ -253,20 +274,29 @@ function playerJoinGame(data) {
 		var memberNames = [];
 		var memberSockets = [];
 		var clients = room.sockets;
-		for (var index = 0; index < clients.length; index++) {
-         var clientId = clients[index];
+		for (var clientId in clients) {
 			memberSockets.push(clientId);
 			memberNames.push(io.sockets.connected[clientId].nickname);
 		}
+      
+      var personalData = {};
+      personalData["memberNames"] = memberNames;
+      personalData["memberSockets"] = memberSockets;
+      personalData["gameId"] = data.gameId;
+      // Attach this data if it exists. The client functions only access it in situations where it exists. 
+      /* if (pointsForThisRoom != null) {
+         personalData["pointsKeys"] = Object.keys(pointsForThisRoom);
+         personalData["pointsValues"] = Object.values(pointsForThisRoom);
+      } */
 		
 		// Data that isn't to go to all the other clients	
-		var personalData = {
+		/* var personalData = {
 			memberNames: memberNames,
 			memberSockets: memberSockets,
 			gameId: data.gameId,
          pointsKeys: Object.keys(pointsForThisRoom),
          pointsValues: Object.values(pointsForThisRoom)
-		}
+		} */
 		
 		// Note that thsis only emits to the client of the sender.
 		sock.emit('youJoinedRoom', personalData);
