@@ -4,15 +4,10 @@ var gameSocket;
 var questions;
 
 // TO-DO:
-// 1.) Player joining mid-game 
-      // UI doesn't update immediately (until round ends or goes to voting or something)
-// 2.) Host leaves game so need to create new host    
-// 4.) Player leaving mid-round before voting 
-      // No longer need their vote 
-      // If they've already voted, remove their response? 
-// 5.) More visual indication that vote was received
-      // Highlight the response that the user voted for 
-// 6.) Bold own name in player list       
+// 0.) Keep track of score; make game "winnable"
+// 1.) Number of votes doesn't always work
+// 2.) Doesn't seem to always register correct vote.
+// 3.) Misspelling in question about internship offering "off"    
 
 // Function called to initialize a new game instance.
 // @param sio The Socket.IO library
@@ -116,47 +111,59 @@ function votingBegins(data) {
 // This event is triggered when a client votes for a response during the voting stage of the game. This method will emit an event
 // to the clients, telling the host to increase the point tally for the appropriate response based on the vote field of the data parameter.
 function voteCasted(data) {
-   console.warn("Vote was casted in game: " + data.gameId);
+   console.warn("Vote was casted in game " + data.gameId + " for " + data.vote + " [" + data.voteText + "]");
 	io.in(data.gameId).emit('vote-casted', data);
 }
 
 function allVotesReceived(data) {
    console.warn("allVotesReceived() called...")
    // console.warn("data = " + data)
-	var i;							      // Loop.
-	var max = data.valuesPoints[0];  // Maximum value.
-   // console.warn("max = " + max);
-	var maxId = data.keysPoints[0];  // PlayerID that got the most points.
-   // console.warn("maxId = " + maxId);
-	var tieFound = false;			   // Indicates whether or not we found a tie.
-	var winners = [];				      // Array of winners (stored as their IDs).
+	var maxNumVotes = data.valuesPoints[0];      // Maximum value.
+   var maxVotesIndex = 0;
+   // console.warn("maxNumVotes = " + maxNumVotes);
+	var maxPlayerId = data.keysPoints[0];        // PlayerID that got the most points.
+   // console.warn("maxPlayerId = " + maxPlayerId);
+	var tieFound = false;			               // Indicates whether or not we found a tie.
+	var winningSessionIds = [];				      // Array of winners (stored as their IDs).
+   var winningResponses = [];                   // Array of winning responses.
+   
+   console.warn("data.keysPoints = " + data.keysPoints);
+   console.warn("data.valuesPoints = " + data.valuesPoints);
+   console.warn("data.keysResponses = " + data.keysResponses);
+   console.warn("data.valuesResponses = " + data.valuesResponses);
+   
    // Find largest or find a tie...
-	for (i = 1; i < data.keysPoints.length; i++) {
-		if (data.valuesPoints[i] > max) {
-			max = data.valuesPoints[i];
-			maxId = data.keysPoints[i];
+	for (var i = 1; i < data.keysPoints.length; i++) {
+		if (data.valuesPoints[i] > data.valuesPoints[maxVotesIndex]) {
+         maxVotesIndex = i;
 			tieFound = false;
 		}
-		else if (data.valuesPoints[i] == max) {
+		else if (data.valuesPoints[i] == maxNumVotes) {
 			tieFound = true;
 		}
 	}
+   
+   console.warn("Tie found? " + tieFound);
+   
 	// If tieFound is true at this point, then that means that a tie was found and no larger values came along after the tie. 
-	// Now we must find all point-values equal to max.
+	// Now we must find all point-values equal to maxNumVotes.
 	if (tieFound == true) {
-		var j;
-		for (j = 0; j < data.keysPoints.length; j++) {
-			if (data.valuesPoints[j] == max) {
-            // console.warn("Pushing " + data.keysPoints[j] + " onto/into winners (there was a tie)")
-            // Populate winners with all the players who tied for first place (with regard to number of votes)
-				winners.push(data.keysPoints[j]);
+		for (var j = 0; j < data.keysPoints.length; j++) {
+			if (data.valuesPoints[j] == data.valuesPoints[maxVotesIndex]) {
+            // Populate winningSessionIds with all the players who tied for first place (with regard to number of votes)
+				winningSessionIds.push(data.keysPoints[j]);
+            winningResponses.push(data.valuesResponses[j]);
 			}
 		}		
 	}
 	else {
+      maxPlayerId = data.keysPoints[maxVotesIndex];
+      // Get the index that the player's response is stoerd at.
+      var responseIndex = data.keysResponses.indexOf(maxPlayerId);      
       // Push the sessionID of the winning player into the player's array. 
       // If there was a tie, then winners will have more than one entry.
-		winners.push(maxId);
+		winningSessionIds.push(maxPlayerId);
+      winningResponses.push(data.valuesResponses[responseIndex]);
 	}
    
    // Create a list of the IDs of all the players in the room and 
@@ -170,12 +177,13 @@ function allVotesReceived(data) {
       playerNames.push(io.sockets.connected[clientId].nickname);
 	}
    
-   // console.warn("winners = " + winners);
-   // console.warn("data.valuesResponses = " + data.valuesResponses)
+   console.warn("winningSessionIds = " + winningSessionIds);
+   console.warn("winningResponses = " + winningResponses)
+   console.warn("maxNumVotes = " + maxNumVotes)
 	var finalData = {
-		winners: winners,
-		responses: data.valuesResponses,
-      maxVotes: max, 
+		winners: winningSessionIds,
+		responses: winningResponses,
+      maxVotes: data.valuesPoints[maxVotesIndex], 
 	}
    
    var question = selectQuestion();

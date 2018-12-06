@@ -61,7 +61,14 @@ jQuery(function($) {
 			IO.socket.on('response', IO.onResponse);						   // Fires when a player sends a response to a question to the server (from in-game).
 			IO.socket.on('voting-begins', IO.votingBegins);		         // Fires when all responses have been submitted and the voting phase begins.
 			IO.socket.on('chat message', function(msg) {					   // Fires when a player sends a chat message (from the pre-game lobby).
-				$('#messages').append($('<li>').text(msg));
+				// Determines whether or not we should scroll down to see new messages. 
+            //var shouldScroll = $('#messages').prop('scrollTop') + $('#messages').prop('clientHeight') === $('#messages').prop('scrollHeight');
+            $('#messages').append($('<li>').text(msg));
+            
+            // For now, just scroll down if a new message was sent. This will be absurdly annoying if 
+            // a player is trying to scroll up to view old messages, but we can extend this later.
+            var scrollHeight = $('#messages').prop('scrollHeight');
+            $('#messages').prop('scrollTop', scrollHeight);         
 			});
          IO.socket.on('next-round', IO.nextRound);
 			IO.socket.on('vote-casted', IO.voteCasted);
@@ -307,7 +314,8 @@ jQuery(function($) {
 				console.log(App.selectedId);
 				var data = {
 					gameId: App.gameId,
-					vote: App.selectedId
+					vote: App.selectedId,
+               voteText: $('#e_' + App.selectedId).text()
 				};
 				console.log('Confirm Vote: ' + App.selectedId);
 				IO.socket.emit('vote-casted', data);
@@ -414,28 +422,29 @@ jQuery(function($) {
 			// Using Fisher-Yates algorithm, shuffle the array so it isn't obvious whose answers are whose.
 			var currentIndex = data.keys.length, temporaryValue, randomIndex;
 			
-		    // While there remain elements to shuffle...
-		    while (0 !== currentIndex) {
+            // While there remain elements to shuffle...
+            while (0 !== currentIndex) {
 
-			  // Pick a remaining element...
-			  randomIndex = Math.floor(Math.random() * currentIndex);
-			  currentIndex -= 1;
+            // Pick a remaining element...
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex -= 1;
 
-			  // And swap it with the current element.
-			  temporaryValue = data.keys[currentIndex];
-			  data.keys[currentIndex] = data.keys[randomIndex];
-			  data.keys[randomIndex] = temporaryValue;
-			  
-			  temporaryValue = data.values[currentIndex];
-			  data.values[currentIndex] = data.values[randomIndex];
-			  data.values[randomIndex] = temporaryValue;			  
-		    }
+            // And swap it with the current element.
+            temporaryValue = data.keys[currentIndex];
+            data.keys[currentIndex] = data.keys[randomIndex];
+            data.keys[randomIndex] = temporaryValue;
+
+            temporaryValue = data.values[currentIndex];
+            data.values[currentIndex] = data.values[randomIndex];
+            data.values[randomIndex] = temporaryValue;			  
+         }
 			
 			// Load all of the respones into the list.
 			for (var i = 0; i < data.keys.length; i++) {
 				$('<button type="button" id="e_' + data.keys[i] + '" + class="list-group-item">' + data.values[i] + '</button>').appendTo(list).hide().slideDown();
 				$('#e_' + data.keys[i]).on('click', function() {
 					App.selectedId = $(this).attr('id').substring(2);
+               console.warn("App.selectedId = " + App.selectedId);
 				});	
 			}			
 		},		
@@ -606,6 +615,7 @@ jQuery(function($) {
 			},
 
 			voteCasted: function(data) {
+            console.warn("Vote Casted: " + data.vote);
 				if (App.Host.points[data.vote] != null) 
 				{
 					App.Host.points[data.vote]++;
