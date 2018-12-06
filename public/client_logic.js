@@ -903,21 +903,9 @@ jQuery(function($) {
             App.points = {};
             for (var i = 0; i < data.pointsKeys.length; i++) {
                App.points[data.pointsKeys[i]] = data.pointsValues[i];
-            }            
-            
-				for (var i = 0; i < data.winners.length; i++) {
-					var elementId = "listElement_" + data.winners[i];
-					var str = JSON.stringify(data.responses[i]);
-               // If the winning entry was longer than 100, then only display the first 100 characters.
-               if (str.length > 100) {
-                  str = str.substring(0, 100) + "..."
-               }
-               str = str + " <strong>[votes received: " + data.maxVotes + "]</strong>"
-					// console.log('str: ' + str);
-					$('<li id=' + elementId + ' class="fadeIn animated faster">' + str + '</li>').appendTo('#winning-response-list');
-				}         
+            }                   
 
-                        // Update the players list to visually show point changes from the round.
+            // Update the players list to visually show point changes from the round.
 				for (var index = 0; index < data.winners.length; index++) {
                var winner = data.winners[index];
                var currentText = $('#listElement_' + winner).text();
@@ -944,6 +932,18 @@ jQuery(function($) {
                currentText = currentText.substring(0, currentText.length - lengthOfPointsText);
                $('#listElement_' + winner).text(currentText + ' [' + App.points[winner] + ']');
 				}
+            
+				for (var i = 0; i < data.winners.length; i++) {
+					var elementId = "listElement_" + data.winners[i];
+					var str = JSON.stringify(data.responses[i]);
+               // If the winning entry was longer than 100, then only display the first 100 characters.
+               if (str.length > 100) {
+                  str = str.substring(0, 100) + "..."
+               }
+               str = str + " <strong>[votes received: " + data.maxVotes + "]</strong>"
+					// console.log('str: ' + str);
+					$('<li id=' + elementId + ' class="fadeIn animated faster">' + str + '</li>').appendTo('#winning-response-list');
+				}              
 			},
          
          nextRound: function(data) {
@@ -958,9 +958,10 @@ jQuery(function($) {
 
             for (var i = 0; i < data.currentPlayerNames.length; i++) {
 					var elementId = "listElement_" + data.currentPlayersIDs[i];
-					$('<li id=' + elementId + '>' + data.currentPlayerNames[i] + '</li>').appendTo('#players-waiting-list').hide().slideDown();
-               $('<li id=' + elementId + '>' + data.currentPlayerNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
-				}	
+               var playerPoints = App.points[data.currentPlayersIDs[i]];
+					$('<li id=' + elementId + '>' + data.currentPlayerNames[i] + ' [' + playerPoints + ']</li>').appendTo('#players-waiting-list').hide().slideDown();
+               $('<li id=' + elementId + '>' + data.currentPlayerNames[i] + ' [' + playerPoints + ']</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
+				} 
             
             // Re-enable the ability to submit an answer.
             $('#response').prop('disabled', false);            
