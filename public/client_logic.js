@@ -534,11 +534,6 @@ jQuery(function($) {
          votes: {},
 			
 			numVotes: 0,
-			
-			// Flag to indicate if a new game is starting.
-			// Used when game ends and players start new game
-			// without refreshing the browser windows.
-			isNewGame: false,
 
 			// Keeps track of the number of players who have jonined the game
 			numPlayersInRoom: 0,
@@ -602,7 +597,6 @@ jQuery(function($) {
             
             App.$gameArea.html(App.$templateLobby);
 				App.$hostStartBtnArea.html(App.$templateHostStartBtn);
-      
 				// Show the gameID / room ID on the screen.
 				$('#gameCode').html('<p style="font-size:64px; text-align: center">RoomID: ' + App.gameId + '</p>');
 				//App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
@@ -757,6 +751,7 @@ jQuery(function($) {
 				}			
 			},	
          
+         // [Host]
          gameOver: function(data) {
             App.$gameArea.html(App.$templateWinner);
             for (var i = 0; i < data.winnerNames.length; i++) {
@@ -791,9 +786,35 @@ jQuery(function($) {
             App.Host.currentGameState = IO.gameStates.LOBBY;
                
             setTimeout(function () {
-               App.$gameArea.html(App.$templateLobby);
-               console.log("[HOST] Returning to lobby...");
+               App.Host.returnToLobby(data);
             }, 8000);
+         },
+         
+         // [Host]
+         // Show the lobby screen again, populate the players list, reset start button, etc.
+         returnToLobby: function(data) {
+            console.log("[HOST] Returning to lobby...");
+            App.$gameArea.html(App.$templateLobby);
+            App.$hostStartBtnArea.html(App.$templateHostStartBtn);
+            $('#hostStartBtnArea').show();
+            $('#btnHostStartGame').show();
+            $('#btnHostStartGame').prop('disabled', false); 
+            $('#messages').append($('<li style="color: #676767">').text("You are the HOST. Press \"Start\" to start the game."));
+            // Add each player already in the lobby (including THIS client) to the players waiting list.
+            // We animate the additions so it looks nice.
+            for (var i = 0; i < data.currentPlayerNames.length; i++) {
+               var elementId = "listElement_" + data.currentPlayersIDs[i];
+               // If we are adding THIS player's name to the list, bold it.
+               if (new String(data.currentPlayersIDs[i]).valueOf() == new String(App.mySocketId).valueOf()) {
+                  $('<li id=' + elementId + ' style="font-weight:bold">' + data.currentPlayerNames[i] + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+                  $('<li id=' + elementId + ' style="font-weight:bold">' + data.currentPlayerNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
+                  
+               }
+               else {
+                  $('<li id=' + elementId + '>' + data.currentPlayerNames[i] + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+                  $('<li id=' + elementId + '>' + data.currentPlayerNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
+               }
+            }	
          },
 
          nextRound: function(data) {
@@ -1042,6 +1063,48 @@ jQuery(function($) {
 					$('<li id=' + elementId + ' class="fadeIn animated faster">' + str + '</li>').appendTo('#winning-response-list');
 				}              
 			},
+         
+         // [Player]
+         gameOver: function(data) {
+            App.$gameArea.html(App.$templateWinner);
+            for (var i = 0; i < data.winnerNames.length; i++) {
+               $('<p style="font-size:64px; text-align: center">' + data.winnerNames[i] + '</p>').appendTo('#winners-list');
+            }
+            
+            // Reset the flag indicating that the user has responded. 
+            // If this is not reset, then the user won't be able to submit a new answer.
+            App.responded = false;
+            
+            // Increment the round counter. 
+            App.currentRound = 0;
+               
+            setTimeout(function () {
+               App.Player.returnToLobby(data);
+            }, 8000);
+         },        
+
+         // [Player]
+         // Show the lobby screen again, populate the players list, reset start button, etc.
+         returnToLobby: function(data) {
+            console.log("[Player] Returning to lobby...");
+            $('#messages').append($('<li style="color: #676767">').text("Waiting for host to start game or current round to end..."));
+            App.$gameArea.html(App.$templateLobby);              
+            // Add each player already in the lobby (including THIS client) to the players waiting list.
+            // We animate the additions so it looks nice.
+            for (var i = 0; i < data.currentPlayerNames.length; i++) {
+               var elementId = "listElement_" + data.currentPlayersIDs[i];
+               // If we are adding THIS player's name to the list, bold it.
+               if (new String(data.currentPlayersIDs[i]).valueOf() == new String(App.mySocketId).valueOf()) {
+                  $('<li id=' + elementId + ' style="font-weight:bold">' + data.currentPlayerNames[i] + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+                  $('<li id=' + elementId + ' style="font-weight:bold">' + data.currentPlayerNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
+                  
+               }
+               else {
+                  $('<li id=' + elementId + '>' + data.currentPlayerNames[i] + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+                  $('<li id=' + elementId + '>' + data.currentPlayerNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
+               }
+            }	
+         },
          
          nextRound: function(data) {
             console.log("[PLAYER] Starting next round...");

@@ -187,7 +187,7 @@ function allVotesReceived(data) {
       winnerNames.push(io.sockets.connected[currentId].nickname);
       var val = pointsForThisRoom[currentId.toString()];
       
-      if (val >= 1) {
+      if (val >= 10) {
          console.warn("[GAME " + data.gameId + "] We have a winner: " + currentId);
          gameOver = true;
       }
