@@ -177,14 +177,17 @@ function allVotesReceived(data) {
       winningResponses.push(data.valuesResponses[responseIndex]);
 	}
    
-   // For each winner, increment their points.
    var pointsForThisRoom = points[data.gameId.toString()];
+   // Names of the winning players.
+   var winnerNames = [];
+   // For each winner, increment their points.
    for (var index = 0; index < winningSessionIds.length; index++) {
       var currentId = winningSessionIds[index];
       pointsForThisRoom[currentId.toString()] = pointsForThisRoom[currentId.toString()] + 1;
-      console.warn("[GAME " + data.gameId + "] Points for " + currentId + ": " + pointsForThisRoom[currentId.toString()]);      
+      winnerNames.push(io.sockets.connected[currentId].nickname);
+      var val = pointsForThisRoom[currentId.toString()];
       
-      if (pointsForThisRoom[currentId.toString()] == 10) {
+      if (val >= 1) {
          console.warn("[GAME " + data.gameId + "] We have a winner: " + currentId);
          gameOver = true;
       }
@@ -201,10 +204,8 @@ function allVotesReceived(data) {
       playerNames.push(io.sockets.connected[clientId].nickname);
 	}
    
-   // console.warn("winningSessionIds = " + winningSessionIds);
-   // console.warn("winningResponses = " + winningResponses)
-   // console.warn("maxNumVotes = " + maxNumVotes)
-	var finalData = {
+   // Data containing information about the results from the last round.
+	var roundResultData = {
 		winners: winningSessionIds,
 		responses: winningResponses,
       maxVotes: data.valuesVotes[maxVotesIndex], 
@@ -213,19 +214,32 @@ function allVotesReceived(data) {
       gameOver: gameOver
 	}
    
+   // Get the question for the next round to send to the players.
    var question = selectQuestion();
    
-   // This goes to the host only.
+   // Data relevant to the next round (needed by the Host).
    var nextRoundData = {
       currentPlayersIDs: playersSocketIDs,
       currentPlayerNames: playerNames,
       question: question
    }
 	
-	io.in(data.gameId).emit('all-votes-final', finalData);
+	io.in(data.gameId).emit('all-votes-final', roundResultData);
    
-   // TODO: CHANGE THE '1500' TO '10000'
-   // IT IS '1500' TO SPEED UP TESTING 
+   // If game is over, then don't do the next-round event.
+   if (gameOver) {
+      var gameOverData = {
+         currentPlayersIDs: playersSocketIDs,
+         currentPlayerNames: playerNames,   
+         winnerIds: winningSessionIds,
+         winnerNames: winnerNames
+      }
+      setTimeout(function() {
+         io.in(data.gameId).emit('game-over', gameOverData);
+      }, 3500);      
+      return;
+   }
+   
    setTimeout(function() {
       io.in(data.gameId).emit('next-round', nextRoundData);
    }, 7500);

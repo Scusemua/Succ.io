@@ -3,6 +3,32 @@ body {
 	font-family: Helvetica Neue, Arial;
 }
 
+.winning-text {
+   display: inline-block;
+   width: 33%;
+}
+
+.red {
+  background-color: #E94A3F;
+}
+
+.yellow {
+  background-color: #FAA040;
+}
+
+.blue {
+  background-color: #5FC9F5;
+}
+
+[class|="confetti"] {
+  position: absolute;
+}
+
+.wrapper {
+  position: relative;
+  min-height: 100vh;
+}
+
 /* Button which a player presses to confirm their nickname */
 #btnConfirmNickname {
 	margin: 10px;

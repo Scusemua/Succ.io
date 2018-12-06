@@ -60,6 +60,7 @@ jQuery(function($) {
 			IO.socket.on('game-started', IO.showGameScreen);				// Fires when the game has been started by the host and the game actually started.
 			IO.socket.on('response', IO.onResponse);						   // Fires when a player sends a response to a question to the server (from in-game).
 			IO.socket.on('voting-begins', IO.votingBegins);		         // Fires when all responses have been submitted and the voting phase begins.
+         IO.socket.on('game-over', IO.gameOver);                     // Fires once somebody wins the game.   
 			IO.socket.on('chat message', function(msg) {					   // Fires when a player sends a chat message (from the pre-game lobby).
 				// Determines whether or not we should scroll down to see new messages. 
             //var shouldScroll = $('#messages').prop('scrollTop') + $('#messages').prop('clientHeight') === $('#messages').prop('scrollHeight');
@@ -163,6 +164,11 @@ jQuery(function($) {
             console.warn("App[App.myRole] is null");
          }
 		},		
+      
+      // A player won the game. Display winners then return to lobby.
+      gameOver: function(data) {
+         App[App.myRole].gameOver(data);
+      },
 		
 		// Executes when a player responds to a question in-game.
 		onResponse: function(data) {
@@ -280,6 +286,8 @@ jQuery(function($) {
          App.$templateAwaitingNextRound = $('#game-awaiting-next-round').html();
 			// This is the overall template for the game. It contains the panelContent element.
 			App.$templateGame = $('#game-template').html();
+         // Displayed when somebody wins the game.
+         App.$templateWinner = $('#winner-template').html();
 			// This is the template for displaying the most-voted response at the end of the voting stage.
 			App.$templateFinalResults = $('#game-display-results').html();
 		},
@@ -340,7 +348,56 @@ jQuery(function($) {
      showInitScreen: function() {
          // Animate the transition.
          App.$gameArea.html(App.$templateNickname);
+                      
+         /*for (var i = 0; i < 200; i++) {
+            App.create(i);
+         }*/
      },		
+      
+      /*create(i) {
+  var width = Math.random() * 8;
+  var height = width * 0.4;
+  var colourIdx = Math.ceil(Math.random() * 3);
+  var colour = "red";
+  switch(colourIdx) {
+    case 1:
+      colour = "yellow";
+      break;
+    case 2:
+      colour = "blue";
+      break;
+    default:
+      colour = "red";
+  }
+  $('<div class="confetti-'+i+' '+colour+'"></div>').css({
+    "width" : width+"px",
+    "height" : height+"px",
+    "top" : -Math.random()*20+"%",
+    "left" : Math.random()*100+"%",
+    "opacity" : Math.random()+0.5,
+    "transform" : "rotate("+Math.random()*360+"deg)"
+  }).appendTo('.wrapper');  
+  
+  App.drop(i);
+       },
+      
+      drop(x) {
+        $('.confetti-'+x).animate({
+          top: "100%",
+          left: "+="+Math.random()*15+"%"
+        }, Math.random()*3000 + 3000, function() {
+          App.reset(x);
+        });
+      },
+
+      reset(x) {
+        $('.confetti-'+x).animate({
+          "top" : 0+"%",
+          "left" : "-="+Math.random()*15+"%"
+        }, 0, function() {
+          App.drop(x);             
+        });
+      },    */ 
 		
 		 
 		// Make the text inside the given element as big as possible.
@@ -542,9 +599,10 @@ jQuery(function($) {
 			displayNewGameScreen: function() {
 				// Fill the game area with the appropriate HTML.
 				// We call .hide() and then .fadeIn() to animate the transition.
-				App.$gameArea.html(App.$templateLobby);
+            
+            App.$gameArea.html(App.$templateLobby);
 				App.$hostStartBtnArea.html(App.$templateHostStartBtn);
-
+      
 				// Show the gameID / room ID on the screen.
 				$('#gameCode').html('<p style="font-size:64px; text-align: center">RoomID: ' + App.gameId + '</p>');
 				//App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
@@ -696,8 +754,47 @@ jQuery(function($) {
                str = str + " <strong>[votes received: " + data.maxVotes + "]</strong>"
 					console.log('str: ' + str);
 					$('<li id=' + elementId + ' class="fadeIn animated faster">' + str + '</li>').appendTo('#winning-response-list');
-				}				
+				}			
 			},	
+         
+         gameOver: function(data) {
+            App.$gameArea.html(App.$templateWinner);
+            for (var i = 0; i < data.winnerNames.length; i++) {
+               $('<p style="font-size:64px; text-align: center">' + data.winnerNames[i] + '</p>').appendTo('#winners-list');
+            }
+            
+            // Reset the flag indicating that the user has responded. 
+            // If this is not reset, then the user won't be able to submit a new answer.
+            App.responded = false;
+            
+            // Reset the vote counter.
+            App.Host.numVotes = 0;
+            
+            // Increment the round counter. 
+            App.currentRound = 0;     
+
+            // Clear the participating players list and repopulate it with data received from the server.
+            App.Host.playersParticipating = [];
+            for (var i = 0; i < data.currentPlayersIDs.length; i++) {
+               App.Host.playersParticipating[i] = data.currentPlayersIDs[i]; 
+            }
+            
+            console.warn("App.Host.playersParticipating = " + App.Host.playersParticipating);
+            
+            // Make sure to clear the roundResponses dictionary/map as well.
+            App.Host.roundResponses = {}   
+
+            // Clear the points dictionary/map. 
+            App.Host.votes = {}
+            
+            // Update the game state. 
+            App.Host.currentGameState = IO.gameStates.LOBBY;
+               
+            setTimeout(function () {
+               App.$gameArea.html(App.$templateLobby);
+               console.log("[HOST] Returning to lobby...");
+            }, 8000);
+         },
 
          nextRound: function(data) {
             console.log("[HOST] Starting next round...");
