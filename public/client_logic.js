@@ -225,6 +225,10 @@ jQuery(function($) {
       
       // Current question.
       question: '',
+      
+      // Client-side copy of the points for this room. The server maintains this data 
+      // and broadcasts it at the end of rounds and to new players when they join the room.
+      points: {},      
 		
 		//
 		//
@@ -361,19 +365,21 @@ jQuery(function($) {
 			App.$gameArea.html(App.$templateGame).hide();
 			App.$gameArea.fadeIn();
 
-         // Copy in all the socketIDs for the current players to the Host.
-         for (var j = 0; j < data.memberSockets.length; j++) {
-            App.Host.playersParticipating[j] = data.memberSockets[j];
+         if (App.myRole == "Host") {
+            // Copy in all the socketIDs for the current players to the Host.
+            for (var j = 0; j < data.memberSockets.length; j++) {
+               App.Host.playersParticipating[j] = data.memberSockets[j];
+            }
+            
+            console.warn("App.Host.playersParticipating = " + App.Host.playersParticipating);            
          }
-         
-         console.warn("App.Host.playersParticipating = " + App.Host.playersParticipating);
          
          $('#panel-content').html(App.$templateQuestionGame);
 			
 			// Populate the list of players in either of the aforementioned cases.
 			for (var i = 0; i < data.memberNames.length; i++) {
 				var elementId = "listElement_" + data.memberSockets[i];
-				$('<li id=' + elementId + '>' + data.memberNames[i] + '</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
+				$('<li id=' + elementId + '>' + data.memberNames[i] + ' [0]</li>').appendTo('#players-waiting-list-ingame').hide().slideDown();
 			}			
          
          App.question = data.question;
@@ -463,8 +469,8 @@ jQuery(function($) {
 			players: [],
 
 			roundResponses: {},
-			
-			points: {},
+         
+         votes: {},
 			
 			numVotes: 0,
 			
@@ -540,7 +546,7 @@ jQuery(function($) {
 				//App.doTextFit('#gameCode', {minFontSize:10, maxFontSize: 20});
 				
 				var elementId = "listElement_" + App.mySocketId;
-				$('<li id=' + elementId + ' style="font-weight:bold">' + App.Player.myName + '</li>').appendTo('#players-waiting-list').hide().slideDown();
+				$('<li id=' + elementId + ' style="font-weight:bold">' + App.Player.myName + ' [0]</li>').appendTo('#players-waiting-list').hide().slideDown();
             
             $('#messages').append($('<li style="color: #676767">').text("You are the HOST. Press \"Start\" to start the game."));
 			},	
@@ -562,23 +568,6 @@ jQuery(function($) {
             
 				// IO.socket.emit('chat message', "HOST STARTED THE GAME - COUNTING DOWN");
             IO.socket.emit('game-starting', App.gameId);
-            /*
-				interval: intervalId = setInterval(function() {
-					var data = {
-						count: App.counter
-					}
-					// Emit a countdown to the server which will then start displaying the count-down in the chat to the users.
-					IO.socket.emit('countdown', data);
-					App.counter = App.counter - 1;
-					// Display 'counter' wherever you want to display it.
-					if (App.counter < 0) {
-						// Tell the server that the game is starting.
-						IO.socket.emit('game-starting', App.gameId);
-						App.$hostStartBtnArea.hide();
-						// $('#gameCode').hide();
-						clearInterval(intervalId);
-					}
-				}, 1000) */
 			},
 			
 			/* When a player enters and submits a response to a question, an event is fired and this method is executed by the host (server-side). */
@@ -607,8 +596,8 @@ jQuery(function($) {
 			playerJoinedRoom : function(data) {
             console.warn("[HOST] Player joined.");
 				var elementId = "listElement_" + data.playerId;
-				$('<li id=' + elementId + ' class="fadeInUp animated fast">' + data.playerName + '</li>').appendTo('#players-waiting-list'); //.hide().slideDown();
-            $('<li id=' + elementId + ' class="fadeInUp animated fast">' + data.playerName + '</li>').appendTo('#players-waiting-list-ingame'); //.hide().slideDown();
+				$('<li id=' + elementId + ' class="fadeInUp animated fast">' + data.playerName + ' [0]</li>').appendTo('#players-waiting-list'); //.hide().slideDown();
+            $('<li id=' + elementId + ' class="fadeInUp animated fast">' + data.playerName + ' [0]</li>').appendTo('#players-waiting-list-ingame'); //.hide().slideDown();
 				App.Host.numPlayersInRoom++;
             
             $('#messages').append($('<li style="color: #7c89bd">').text(data.playerName + " connected to the game."));
@@ -616,20 +605,20 @@ jQuery(function($) {
 
 			voteCasted: function(data) {
             console.warn("Vote Casted: " + data.vote);
-				if (App.Host.points[data.vote] != null) 
+				if (App.Host.votes[data.vote] != null) 
 				{
-					App.Host.points[data.vote]++;
+					App.Host.votes[data.vote]++;
 				} 
 				else 
 				{
-					App.Host.points[data.vote] = 1;
+					App.Host.votes[data.vote] = 1;
 				}
 				App.Host.numVotes++;
 				
 				if (App.Host.numVotes >= App.Host.playersParticipating.length) {
 					var dataToServer = {
-						keysPoints: Object.keys(App.Host.points),
-						valuesPoints: Object.values(App.Host.points),
+						keysVotes: Object.keys(App.Host.votes),
+						valuesVotes: Object.values(App.Host.votes),
 						keysResponses: Object.keys(App.Host.roundResponses),
 						valuesResponses: Object.values(App.Host.roundResponses),
 						gameId: App.gameId
@@ -647,14 +636,33 @@ jQuery(function($) {
             // Update game state 
             App.Host.currentGameState = IO.gameStates.WINNERS;
             
+            App.points = {};
+            for (var i = 0; i < data.pointsKeys.length; i++) {
+               App.points[data.pointsKeys[i]] = data.pointsValues[i];
+            }
+            
+            console.warn("data.pointsKeys = " + data.pointsKeys);
+            console.warn("data.pointsValues = " + data.pointsValues);
+            
             // Host Method 
 				$('#panel-content').html(App.$templateFinalResults).hide();
             $('#panel-content').fadeIn();
             
             $('#question-results').text(App.question); 
             
-				for (var winner in data.winners) {
+				for (var index = 0; index < data.winners.length; index++) {
+               var winner = data.winners[index];
 					console.log(winner, '=', JSON.stringify(data.winners[winner]));
+               var currentText = $('#listElement_' + data.winners[winner].toString()).text();
+               console.warn("currentText = " + currentText);
+               console.warn("data.winners[winner] = " + data.winners[winner]);
+               // We want to capture just the user's name from the currentText variable. We need to subtract a certain
+               // number of characters from the end. We definitely subtract at least three since we need to subtract the
+               // space and the two brackets '[' ']', but we also need to subtract the digits. This, of course, depends 
+               // upon the number of digits in the player's point value, so we calculate that here.
+               var lengthOfPointsText = App.points[data.winners[winner]].toString().length + 3;
+               currentText = currentText.substring(0, currentText.length - lengthOfPointsText);
+               $('#listElement_' + data.winners[winner].toString()).text(currentText + ' [' + App.points[data.winners[winner].toString()] + ']');
 				}
 				
 				for (var i = 0; i < data.winners.length; i++) {
@@ -703,7 +711,7 @@ jQuery(function($) {
             App.Host.roundResponses = {}   
 
             // Clear the points dictionary/map. 
-            App.Host.points = {}
+            App.Host.votes = {}
             
             // Update the game state. 
             App.Host.currentGameState = IO.gameStates.QUESTION;

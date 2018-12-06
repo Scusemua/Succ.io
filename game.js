@@ -2,12 +2,10 @@ var io;
 var gameSocket;
 
 var questions;
+var points;
 
 // TO-DO:
 // 0.) Keep track of score; make game "winnable"
-// 1.) Number of votes doesn't always work
-// 2.) Doesn't seem to always register correct vote.
-// 3.) Misspelling in question about internship offering "off"    
 
 // Function called to initialize a new game instance.
 // @param sio The Socket.IO library
@@ -16,6 +14,7 @@ exports.initGame = function(sio, socket) {
 	io = sio;
 	gameSocket = socket;
    questions = [];
+   points = {};
 	gameSocket.emit('connected', { message: "You are connected!"});	// Emtis event to client notiftying client that they successfully connected.
 	
    var lineReader = require('readline').createInterface({
@@ -28,7 +27,7 @@ exports.initGame = function(sio, socket) {
    
    
 	// Host Events
-	gameSocket.on('hostCreateNewGame', hostCreateNewGame)     // Fires when a client creates a nwe game.
+	gameSocket.on('hostCreateNewGame', hostCreateNewGame)    // Fires when a client creates a nwe game.
 	gameSocket.on('game-starting', gameStarting);	         // Fires when the game is beginning (host pressed Start).
 	gameSocket.on('response', function(data) {					// Fires when a player sends a response to the server from the actual game.
 		io.in(data.gameId).emit('response', data);
@@ -77,23 +76,28 @@ function gameStarting(gameId) {
 	console.log('Game ' + gameId + ' Started!!!');
 	var sock = this;
 	var room = gameSocket.adapter.rooms[gameId];
-	
 	var memberNames = [];
 	var memberSockets = [];
 	var clients = room.sockets;
 	console.log(clients);
-	for (var clientId in clients) {
+   var pointsForThisRoom = {};
+	for (var index = 0; index < clients.length; index++) {
+      var clientId = clients[index];
 		memberSockets.push(clientId);
+      pointsForThisRoom[clientId.toString()] = 0;
 		memberNames.push(io.sockets.connected[clientId].nickname);
 	}
-	
+   this.points[gameId.toString()] = pointsForThisRoom;   
+   
    var question = selectQuestion();
    
 	var personalData = {
 		memberNames: memberNames,
 		memberSockets: memberSockets,
 		gameId: gameId,
-      question: question
+      question: question,
+      pointsKeys: Object.keys(pointsForThisRoom),
+      pointsValues: Object.values(pointsForThisRoom)
 	}
 	
 	// Tell all of the players that the game has started.
@@ -111,53 +115,53 @@ function votingBegins(data) {
 // This event is triggered when a client votes for a response during the voting stage of the game. This method will emit an event
 // to the clients, telling the host to increase the point tally for the appropriate response based on the vote field of the data parameter.
 function voteCasted(data) {
-   console.warn("Vote was casted in game " + data.gameId + " for " + data.vote + " [" + data.voteText + "]");
+   console.warn("[GAME " + data.gameId + "] Vote cast for " + data.vote + " [" + data.voteText + "]");
 	io.in(data.gameId).emit('vote-casted', data);
 }
 
 function allVotesReceived(data) {
-   console.warn("allVotesReceived() called...")
+   // console.warn("allVotesReceived() called...")
    // console.warn("data = " + data)
-	var maxNumVotes = data.valuesPoints[0];      // Maximum value.
+	var maxNumVotes = data.valuesVotes[0];      // Maximum value.
    var maxVotesIndex = 0;
    // console.warn("maxNumVotes = " + maxNumVotes);
-	var maxPlayerId = data.keysPoints[0];        // PlayerID that got the most points.
+	var maxPlayerId = data.keysVotes[0];        // PlayerID that got the most points.
    // console.warn("maxPlayerId = " + maxPlayerId);
 	var tieFound = false;			               // Indicates whether or not we found a tie.
 	var winningSessionIds = [];				      // Array of winners (stored as their IDs).
    var winningResponses = [];                   // Array of winning responses.
    
-   console.warn("data.keysPoints = " + data.keysPoints);
-   console.warn("data.valuesPoints = " + data.valuesPoints);
-   console.warn("data.keysResponses = " + data.keysResponses);
-   console.warn("data.valuesResponses = " + data.valuesResponses);
+   //console.warn("data.keysVotes = " + data.keysVotes);
+   //console.warn("data.valuesVotes = " + data.valuesVotes);
+   //console.warn("data.keysResponses = " + data.keysResponses);
+   //console.warn("data.valuesResponses = " + data.valuesResponses);
    
    // Find largest or find a tie...
-	for (var i = 1; i < data.keysPoints.length; i++) {
-		if (data.valuesPoints[i] > data.valuesPoints[maxVotesIndex]) {
+	for (var i = 1; i < data.keysVotes.length; i++) {
+		if (data.valuesVotes[i] > data.valuesVotes[maxVotesIndex]) {
          maxVotesIndex = i;
 			tieFound = false;
 		}
-		else if (data.valuesPoints[i] == maxNumVotes) {
+		else if (data.valuesVotes[i] == maxNumVotes) {
 			tieFound = true;
 		}
 	}
    
-   console.warn("Tie found? " + tieFound);
+   //console.warn("Tie found? " + tieFound);
    
 	// If tieFound is true at this point, then that means that a tie was found and no larger values came along after the tie. 
 	// Now we must find all point-values equal to maxNumVotes.
 	if (tieFound == true) {
-		for (var j = 0; j < data.keysPoints.length; j++) {
-			if (data.valuesPoints[j] == data.valuesPoints[maxVotesIndex]) {
+		for (var j = 0; j < data.keysVotes.length; j++) {
+			if (data.valuesVotes[j] == data.valuesVotes[maxVotesIndex]) {
             // Populate winningSessionIds with all the players who tied for first place (with regard to number of votes)
-				winningSessionIds.push(data.keysPoints[j]);
+				winningSessionIds.push(data.keysVotes[j]);
             winningResponses.push(data.valuesResponses[j]);
 			}
 		}		
 	}
 	else {
-      maxPlayerId = data.keysPoints[maxVotesIndex];
+      maxPlayerId = data.keysVotes[maxVotesIndex];
       // Get the index that the player's response is stoerd at.
       var responseIndex = data.keysResponses.indexOf(maxPlayerId);      
       // Push the sessionID of the winning player into the player's array. 
@@ -166,24 +170,35 @@ function allVotesReceived(data) {
       winningResponses.push(data.valuesResponses[responseIndex]);
 	}
    
+   // For each winner, increment their points.
+   var pointsForThisRoom = points[data.gameId.toString()];
+   for (var index = 0; index < winningSessionIds.length; index++) {
+      var currentId = winningSessionIds[index];
+      pointsForThisRoom[currentId.toString()] = pointsForThisRoom[currentId.toString()] + 1;
+      console.warn("[GAME " + data.gameId + "] Points for " + currentId + ": " + pointsForThisRoom[currentId.toString()]);      
+   }
+   
    // Create a list of the IDs of all the players in the room and 
    // send it to the host so they know how many respones are needed and whatnot.
    var playersSocketIDs = [];
    var playerNames = [];
    var room = gameSocket.adapter.rooms[data.gameId];
    var clients = room.sockets;
-	for (var clientId in clients) {
+   for (var index = 0; index < clients.length; index++) {
+      var clientId = clients[index];
 		playersSocketIDs.push(clientId);
       playerNames.push(io.sockets.connected[clientId].nickname);
 	}
    
    console.warn("winningSessionIds = " + winningSessionIds);
-   console.warn("winningResponses = " + winningResponses)
-   console.warn("maxNumVotes = " + maxNumVotes)
+   //console.warn("winningResponses = " + winningResponses)
+   //console.warn("maxNumVotes = " + maxNumVotes)
 	var finalData = {
 		winners: winningSessionIds,
 		responses: winningResponses,
-      maxVotes: data.valuesPoints[maxVotesIndex], 
+      maxVotes: data.valuesVotes[maxVotesIndex], 
+      pointsKeys: Object.keys(pointsForThisRoom),
+      pointsValues: Object.values(pointsForThisRoom)
 	}
    
    var question = selectQuestion();
@@ -222,6 +237,10 @@ function playerJoinGame(data) {
 	// Look up the room ID.
 	var room = gameSocket.adapter.rooms[data.gameId];
 	
+   var pointsForThisRoom = points[data.gameId.toString()];
+   console.warn("pointsForThisRoom = " + pointsForThisRoom);
+   pointsForThisRoom[sock.id.toString()] = 0;
+   
 	// If the room exists, attempt to join. Otherwise, present error message.
 	if (room != undefined) {
 		// Attach the socket id to the data object.
@@ -234,7 +253,8 @@ function playerJoinGame(data) {
 		var memberNames = [];
 		var memberSockets = [];
 		var clients = room.sockets;
-		for (var clientId in clients) {
+		for (var index = 0; index < clients.length; index++) {
+         var clientId = clients[index];
 			memberSockets.push(clientId);
 			memberNames.push(io.sockets.connected[clientId].nickname);
 		}
@@ -243,7 +263,9 @@ function playerJoinGame(data) {
 		var personalData = {
 			memberNames: memberNames,
 			memberSockets: memberSockets,
-			gameId: data.gameId
+			gameId: data.gameId,
+         pointsKeys: Object.keys(pointsForThisRoom),
+         pointsValues: Object.values(pointsForThisRoom)
 		}
 		
 		// Note that thsis only emits to the client of the sender.
