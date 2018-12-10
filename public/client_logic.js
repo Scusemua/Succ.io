@@ -487,10 +487,12 @@ jQuery(function($) {
          var list = $('#response-list');
 			
 			// Using Fisher-Yates algorithm, shuffle the array so it isn't obvious whose answers are whose.
-			var currentIndex = data.keys.length, temporaryValue, randomIndex;
+			var currentIndex = data.keys.length;
+         var temporaryValue;
+         var randomIndex;
 			
-            // While there remain elements to shuffle...
-            while (0 !== currentIndex) {
+         // While there remain elements to shuffle...
+         while (0 !== currentIndex) {
 
             // Pick a remaining element...
             randomIndex = Math.floor(Math.random() * currentIndex);
@@ -511,7 +513,6 @@ jQuery(function($) {
 				$('<button type="button" id="e_' + data.keys[i] + '" + class="list-group-item">' + data.values[i] + '</button>').appendTo(list).hide().slideDown();
 				$('#e_' + data.keys[i]).on('click', function() {
 					App.selectedId = $(this).attr('id').substring(2);
-               console.warn("App.selectedId = " + App.selectedId);
 				});	
 			}			
 		},		
@@ -628,20 +629,18 @@ jQuery(function($) {
 			
 			/* When a player enters and submits a response to a question, an event is fired and this method is executed by the host (server-side). */
 			onResponse: function(data) {
-				// console.log('Client ' + data.playerId + ' responded with: ' + data.response);
-				// App.Host.roundResponses.set(data.playerId, data.response);
 				App.Host.roundResponses[data.playerId] = data.response;
 				
 				// Everybody has submitted a response. 
 				if (Object.keys(App.Host.roundResponses).length == App.Host.playersParticipating.length) {
-					var d = {
+					var data = {
 						keys: Object.keys(App.Host.roundResponses),
 						values: Object.values(App.Host.roundResponses),
 						gameId: App.gameId
 					}
 					
 					// Tell the server to emit the event to all CLIENTS in the game room INCLUDING THE SENDER. 
-					IO.socket.emit('voting-begins', d);
+					IO.socket.emit('voting-begins', data);
 				}
 			},
 
@@ -711,8 +710,8 @@ jQuery(function($) {
             $('#question-results').text(App.question); 
             
             // Update the players list to visually show point changes from the round.
-				for (var index = 0; index < data.winners.length; index++) {
-               var winner = data.winners[index];
+				for (var index = 0; index < data.roundWinners.length; index++) {
+               var winner = data.roundWinners[index];
                var currentText = $('#listElement_' + winner).text();
                console.warn("currentText = " + currentText);
                
@@ -738,8 +737,8 @@ jQuery(function($) {
                $('#listElement_' + winner).text(currentText + ' [' + App.points[winner] + ']');
 				}
 				
-				for (var i = 0; i < data.winners.length; i++) {
-					var elementId = "listElement_" + data.winners[i];
+				for (var i = 0; i < data.roundWinners.length; i++) {
+					var elementId = "listElement_" + data.roundWinners[i];
 					var str = JSON.stringify(data.responses[i]);
                // If the winning entry was longer than 100, then only display the first 100 characters.
                if (str.length > 100) {
@@ -1024,8 +1023,8 @@ jQuery(function($) {
             }                   
 
             // Update the players list to visually show point changes from the round.
-				for (var index = 0; index < data.winners.length; index++) {
-               var winner = data.winners[index];
+				for (var index = 0; index < data.roundWinners.length; index++) {
+               var winner = data.roundWinners[index];
                var currentText = $('#listElement_' + winner).text();
                console.warn("currentText = " + currentText);
                
@@ -1051,8 +1050,8 @@ jQuery(function($) {
                $('#listElement_' + winner).text(currentText + ' [' + App.points[winner] + ']');
 				}
             
-				for (var i = 0; i < data.winners.length; i++) {
-					var elementId = "listElement_" + data.winners[i];
+				for (var i = 0; i < data.roundWinners.length; i++) {
+					var elementId = "listElement_" + data.roundWinners[i];
 					var str = JSON.stringify(data.responses[i]);
                // If the winning entry was longer than 100, then only display the first 100 characters.
                if (str.length > 100) {
