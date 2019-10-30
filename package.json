@@ -16,7 +16,7 @@
     "fastclick": "^1.0.6",
     "forwarded": "^0.1.2",
     "fresh": "^0.5.2",
-    "jquery": "^3.3.1",
+    "jquery": "^3.4.0",
     "mime": "^2.4.0",
     "socket.io": "^2.2.0",
     "textfit": "^2.3.1"
