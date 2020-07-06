@@ -1,4 +1,6 @@
 # Succ.io
 Fan remake of Sily.co 
 
-Mostly functional in its current form. There's probably a lot of bugs, though. 
+There are many NSFW questions. You have been warned.
+
+Mostly functional in its current form.
