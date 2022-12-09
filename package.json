@@ -12,7 +12,7 @@
   "dependencies": {
     "animate.css": "^3.7.0",
     "debug": "^4.1.0",
-    "express": "^4.16.4",
+    "express": "^4.17.3",
     "fastclick": "^1.0.6",
     "forwarded": "^0.1.2",
     "fresh": "^0.5.2",
